@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Login - NPC HR Management System{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Admin Login</h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                Please enter your credentials to access the admin dashboard.
+            </p>
+        </div>
+        <form method="POST" class="mt-8 space-y-6">
+            {% csrf_token %}
+            {% if form.errors %}
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md" role="alert">
+                    <strong class="font-bold">Error:</strong>
+                    <span class="block sm:inline">{{ form.errors.as_text }}</span>
+                </div>
+            {% endif %}
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700">
+                    Username
+                </label>
+                <input type="text" name="username" id="username" autocomplete="username"
+                       required
+                       class="mt-1 block w-full px-3 py-2 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+            </div>
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700">
+                    Password
+                </label>
+                <input type="password" name="password" id="password" autocomplete="current-password"
+                       required
+                       class="mt-1 block w-full px-3 py-2 rounded-md shadow-sm border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+            </div>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <input type="checkbox" name="remember" id="remember" class="h-4 w-4 text-primary focus:ring-primary">
+                    <label for="remember" class="ml-2 block text-sm text-gray-900">
+                        Remember me
+                    </label>
+                </div>
+                <div class="text-sm">
+                    <a href="#" class="font-medium text-primary hover:text-primary-dark">
+                        Forgot your password?
+                    </a>
+                </div>
+            </div>
+            <div>
+                <button type="submit"
+                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                    Log In
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

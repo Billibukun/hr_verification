@@ -1,0 +1,45 @@
+{% load static %}
+{% load static tailwind_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NPC HR Management System{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    {% tailwind_css %}
+    <style>
+        .bg-primary { background-color: #1d741b; }
+        .bg-secondary { background-color: #f2f5f0; }
+        .text-primary { color: #1d741b; }
+        .text-accent { color: #ab8206; }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-secondary min-h-screen flex flex-col">
+    <nav class="bg-primary text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <a href="{% url 'admin_dashboard' %}" class="font-bold text-xl">NPC HR System</a>
+                </div>
+                <div class="flex items-center">
+                    <a href="{% url 'admin_dashboard' %}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-green-700">Dashboard</a>
+</div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-primary text-white py-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p>&copy; {% now "Y" %} National Population Commission. All rights reserved.</p>
+        </div>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

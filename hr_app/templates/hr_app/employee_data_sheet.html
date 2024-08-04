@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-3xl mx-auto">
+        <h2 class="text-3xl font-extrabold text-gray-900 mb-8">Employee Data Sheet</h2>
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Personal Information</h3>
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Full Name</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.firstName }} {{ employee.lastName }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">IPPIS Number</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.ippisNumber }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Date of Birth</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.dateOfBirth }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Gender</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.get_gender_display }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Marital Status</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.get_maritalStatus_display }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Phone Number</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.phoneNumber }}</dd>
+                    </div>
+                </dl>
+            </div>
+            <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Employment Information</h3>
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Department</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.department }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Grade Level</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.currentGradeLevel }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Date of First Appointment</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.dateOfFirstAppointment }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Date of Present Appointment</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.dateOfPresentAppointment }}</dd>
+                    </div>
+                </dl>
+            </div>
+            <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Education and Training</h3>
+                {% for education in employee.educationandtraining_set.all %}
+                    <div class="mb-4">
+                        <h4 class="text-sm font-medium text-gray-700">{{ education.title }}</h4>
+                        <p class="text-sm text-gray-500">{{ education.institution }} ({{ education.startDate }} - {{ education.endDate }})</p>
+                    </div>
+                {% empty %}
+                    <p class="text-sm text-gray-500">No education records found.</p>
+                {% endfor %}
+            </div>
+            <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Previous Employment</h3>
+                {% for employment in employee.previousemployment_set.all %}
+                    <div class="mb-4">
+                        <h4 class="text-sm font-medium text-gray-700">{{ employment.position }} at {{ employment.employer }}</h4>
+                        <p class="text-sm text-gray-500">{{ employment.startDate }} - {{ employment.endDate }}</p>
+                    </div>
+                {% empty %}
+                    <p class="text-sm text-gray-500">No previous employment records found.</p>
+                {% endfor %}
+            </div>
+            <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Financial Information</h3>
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Bank</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.bank }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Account Number</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.accountNumber }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">PFA</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.pfa }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">PFA Number</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.pfaNumber }}</dd>
+                    </div>
+                </dl>
+            </div>
+            <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Next of Kin</h3>
+                {% for kin in employee.next_of_kin.all %}
+                    <div class="mb-4">
+                        <h4 class="text-sm font-medium text-gray-700">{{ kin.fullName }} ({{ kin.relationship }})</h4>
+                        <p class="text-sm text-gray-500">Phone: {{ kin.phoneNumber }}</p>
+                        <p class="text-sm text-gray-500">Address: {{ kin.address }}</p>
+                    </div>
+                {% empty %}
+                    <p class="text-sm text-gray-500">No next of kin records found.</p>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="mt-8 flex justify-end">
+            <a href="{% url 'generate_employee_pdf' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
+                Download PDF
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

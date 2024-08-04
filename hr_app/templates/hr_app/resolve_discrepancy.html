@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="bg-secondary min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold text-primary mb-8">Resolve Discrepancy</h1>
+
+        <div class="bg-white shadow-md rounded-lg overflow-hidden mb-8">
+            <div class="px-4 py-5 sm:p-6">
+                <h2 class="text-2xl font-semibold text-primary mb-4">Discrepancy Details</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <span class="font-medium text-gray-500">Employee:</span>
+                        <span class="ml-2 text-gray-900">{{ employee.firstName }} {{ employee.lastName }}</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-500">Discrepancy Type:</span>
+                        <span class="ml-2 text-gray-900">{{ discrepancy.get_discrepancyType_display }}</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-500">Audit Value:</span>
+                        <span class="ml-2 text-gray-900">{{ discrepancy.auditValue }}</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-500">Current Employee Value:</span>
+                        <span class="ml-2 text-gray-900">{{ discrepancy.employeeValue }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white shadow-md rounded-lg overflow-hidden mb-8">
+            <div class="px-4 py-5 sm:p-6">
+                <h2 class="text-2xl font-semibold text-primary mb-4">Resolve Discrepancy</h2>
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="mt-4 flex justify-end">
+                        <button type="submit" class="bg-primary text-white px-6 py-3 rounded-full text-lg font-semibold hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                            Resolve Discrepancy
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

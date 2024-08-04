@@ -1,0 +1,382 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Data Sheet</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.2;
+            color: black;
+            background-color: #fff;
+            margin: 0;
+            padding: 5px;
+        }
+
+        .container {
+            width: 8.27in;
+            margin: 10px auto;
+            padding: 10px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+
+        h1, h2, h3 {
+            color: green;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        h2 {
+            font-size: 18px;
+            margin-bottom: 5px;
+            border-bottom: 0.5px solid green;
+            padding-bottom: 3px;
+        }
+
+        h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 3px;
+            vertical-align: top;
+        }
+
+        th {
+            background-color: #e9ecef;
+            color: #333;
+            font-weight: bold;
+            width: 15%;
+            text-align: left;
+        }
+
+        td {
+            width: 70%;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .passport-container {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .passport-image {
+            width: 100px;  
+            height: 100px; 
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid #333;
+        }
+
+        .signature-section {
+            margin-top: 30px;
+        }
+
+        .signature-line {
+            border-top: 1px solid #333;
+            margin-top: 50px;
+            padding-top: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .signature-title {
+            font-size: 14px;
+            font-weight: normal;
+            margin-top: 5px;
+        }
+
+        .signature-box {
+            height: 60px;  
+            border-bottom: 1px solid #333;
+            margin-bottom: 10px;
+        }        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Employee Data Sheet</h1>
+
+        <div class="passport-container">
+            {% if employee.passport %}
+                <img src="{{ employee.passport.url }}" alt="Employee Passport" class="passport-image">
+            {% else %}
+                <div class="passport-image" style="background-color: #ccc; display: flex; align-items: center; justify-content: center;">
+                    <span>No Photo</span>
+                </div>
+            {% endif %}
+        </div>
+
+        <h2 class="text-center">{{ employee.firstName }} {{ employee.lastName }}</h2>
+        <table>
+            <tr>
+                <th style="width: 15%;">IPPIS Number:</th>
+                <td style="width: 35%;">{{ employee.ippisNumber }}</td>
+                <th style="width: 15%;">File Number:</th>
+                <td style="width: 35%;">{{ employee.fileNumber }}</td>
+            </tr>
+        </table>    
+
+        <div class="section">
+            <h2>Personal Information</h2>
+            <table>
+                <tr>
+                    <th style="width: 15%;">Date of Birth:</th>
+                    <td style="width: 35%;">{{ employee.dateOfBirth|date:"F d, Y" }}</td>
+                    <th style="width: 15%;">Gender:</th>
+                    <td style="width: 35%;">{{ employee.get_gender_display }}</td>
+                </tr>
+                <tr>
+                    <th style="width: 15%;">Marital Status:</th>
+                    <td style="width: 35%;">{{ employee.get_maritalStatus_display }}</td>
+                    <th style="width: 15%;">Phone Number:</th>
+                    <td style="width: 35%;">{{ employee.phoneNumber }}</td>
+                </tr>
+                <tr>
+                    <th style="width: 15%;">Email:</th>
+                    <td style="width: 35%;">{{ employee.emailAddress }}</td>
+                    <th style="width: 15%;">Residential Address:</th>
+                    <td style="width: 35%;">{{ employee.residentialAddress }}</td>
+                </tr>
+                <tr>
+                    <th style="width: 15%;">State of Origin:</th>
+                    <td style="width: 35%;">{{ employee.stateOfOrigin.name }}</td>
+                    <th style="width: 15%;">LGA of Origin:</th>
+                    <td style="width: 35%;">{{ employee.lgaOfOrigin.name }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Employment Information</h2>
+            <table>
+                <tr>
+                    <th style="width: 15%;">Date of First Appointment:</th>
+                    <td style="width: 35%;">{{ employee.dateOfFirstAppointment|date:"F d, Y" }}</td>
+                    <th style="width: 15%;">Date of Present Appointment:</th>
+                    <td style="width: 35%;">{{ employee.dateOfPresentAppointment|date:"F d, Y" }}</td>
+                </tr>
+                <tr>
+                    <th style="width: 15%;">Date of Confirmation:</th>
+                    <td style="width: 35%;">{{ employee.dateOfConfirmation|date:"F d, Y" }}</td>
+                    <th style="width: 15%;">Current Grade Level:</th>
+                    <td style="width: 35%;">{{ employee.currentGradeLevel }}</td>
+                </tr>
+                <tr>
+                    <th style="width: 15%;">Current Step:</th>
+                    <td style="width: 35%;">{{ employee.currentStep }}</td>
+                    <th style="width: 15%;">Department:</th>
+                    <td style="width: 35%;">{{ employee.department.name }}</td>
+                </tr>
+                <tr>
+                    <th style="width: 15%;">State of Posting:</th>
+                    <td style="width: 35%;">{{ employee.stateOfPosting.name }}</td>
+                    <th style="width: 15%;">Present Appointment:</th>
+                    <td style="width: 35%;">{{ employee.presentAppointment }}</td>
+                </tr>
+                <tr>
+                    <th style="width: 15%;">Last Promotion Date:</th>
+                    <td style="width: 35%;">{{ employee.lastPromotionDate|date:"F d, Y" }}</td>
+                    <th style="width: 15%;">Retirement Date:</th>
+                    <td style="width: 35%;">{{ employee.retirementDate|date:"F d, Y" }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Education and Training</h2>
+            {% for education in education_and_training %}
+                <table>
+                    <tr>
+                        <th style="width: 15%;">Title:</th>
+                        <td style="width: 35%;">{{ education.title }}</td>
+                        <th style="width: 15%;">Institution:</th>
+                        <td style="width: 35%;">{{ education.institution }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 15%;">Level:</th>
+                        <td style="width: 35%;">{{ education.get_level_display }}</td>
+                        <th style="width: 15%;">Start Date:</th>
+                        <td style="width: 35%;">{{ education.startDate|date:"F d, Y" }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 15%;">End Date:</th>
+                        <td style="width: 35%;">{{ education.endDate|date:"F d, Y"|default:"Ongoing" }}</td>
+                        <th style="width: 15%;">Certificate Obtained:</th>
+                        <td style="width: 35%;">{{ education.certificateObtained|yesno:"Yes,No" }}</td>
+                    </tr>
+                </table>
+            {% empty %}
+                <p>No education and training information available.</p>
+            {% endfor %}
+        </div>
+
+        <div class="section">
+            <h2>Previous Employment</h2>
+            {% for employment in previous_employments %}
+                <table>
+                    <tr>
+                        <th style="width: 15%;">Position:</th>
+                        <td style="width: 35%;">{{ employment.position }}</td>
+                        <th style="width: 15%;">Employer:</th>
+                        <td style="width: 35%;">{{ employment.employer }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 15%;">Organisation:</th>
+                        <td style="width: 35%;">{{ employment.organisation }}</td>
+                        <th style="width: 15%;">Start Date:</th>
+                        <td style="width: 35%;">{{ employment.startDate|date:"F d, Y" }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 15%;">End Date:</th>
+                        <td style="width: 70%;" colspan="3">{{ employment.endDate|date:"F d, Y" }}</td>
+                    </tr>
+                </table>
+            {% empty %}
+                <p>No previous employment information available.</p>
+            {% endfor %}
+        </div>
+
+        <div class="section">
+            <h2>Financial Information</h2>
+            <table>
+                <tr>
+                    <th style="width: 15%;">Bank:</th>
+                    <td style="width: 35%;">{{ employee.bank }}</td>
+                    <th style="width: 15%;">Account Type:</th>
+                    <td style="width: 35%;">{{ employee.get_accountType_display }}</td>
+                </tr>
+                <tr>
+                    <th style="width: 15%;">Account Number:</th>
+                    <td style="width: 35%;">{{ employee.accountNumber }}</td>
+                    <th style="width: 15%;">PFA:</th>
+                    <td style="width: 35%;">{{ employee.pfa }}</td>
+                </tr>
+                <tr>
+                    <th style="width: 15%;">PFA Number:</th>
+                    <td style="width: 70%;" colspan="3">{{ employee.pfaNumber }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Next of Kin</h2>
+            {% with nok=next_of_kin %}
+            {% if nok %}
+                <table>
+                    <tr>
+                        <th style="width: 15%;">Next of Kin 1:</th>
+                        <td style="width: 35%;">{{ nok.nok1_fullName }}</td>
+                        <th style="width: 15%;">Relationship:</th>
+                        <td style="width: 35%;">{{ nok.get_nok1_relationship_display }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 15%;">Address:</th>
+                        <td style="width: 35%;">{{ nok.nok1_address }}</td>
+                        <th style="width: 15%;">Phone Number:</th>
+                        <td style="width: 35%;">{{ nok.nok1_phoneNumber }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 15%;">Next of Kin 2:</th>
+                        <td style="width: 35%;">{{ nok.nok2_fullName }}</td>
+                        <th style="width: 15%;">Relationship:</th>
+                        <td style="width: 35%;">{{ nok.get_nok2_relationship_display }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 15%;">Address:</th>
+                        <td style="width: 35%;">{{ nok.nok2_address }}</td>
+                        <th style="width: 15%;">Phone Number:</th>
+                        <td style="width: 35%;">{{ nok.nok2_phoneNumber }}</td>
+                    </tr>
+                </table>
+            {% else %}
+                <p>No next of kin information available.</p>
+            {% endif %}
+            {% endwith %}
+        </div>
+
+        {% if employee.maritalStatus == 'M' %}
+        <div class="section">
+            <h2>Spouse Information</h2>
+            <table>
+                <tr>
+                    <th style="width: 15%;">Full Name:</th>
+                    <td style="width: 35%;">{{ employee.spouse_fullName }}</td>
+                    <th style="width: 15%;">Occupation:</th>
+                    <td style="width: 35%;">{{ employee.spouse_occupation }}</td>
+                </tr>
+                <tr>
+                    <th style="width: 15%;">Employer Name:</th>
+                    <td style="width: 35%;">{{ employee.spouse_employerName }}</td>
+                    <th style="width: 15%;">Employment Period:</th>
+                    <td style="width: 35%;">{{ employee.spouse_employmentPeriod }}</td>
+                </tr>
+            </table>
+        </div>
+        {% endif %}
+
+        <div class="signature-section">
+            <h2>Official Endorsement</h2>
+            <table>
+                {% if employee.stateOfPosting.code == '700' %}
+                    <tr>
+                        <th style="width: 50%;">Head of Division:</th>
+                        <td style="width: 50%;">
+                            <div class="signature-box"></div>
+                        </td>
+                        <th style="width: 50%;">Director of Department:</th>
+                        <td style="width: 50%;">
+                            <div class="signature-box"></div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <th style="width: 30%;">LGA Comptroller:</th>
+                        <td style="width: 70%;">
+                            <div class="signature-box"></div>
+                        </td>
+                        <th style="width: 30%;">Head of Accounts (State):</th>
+                        <td style="width: 70%;">
+                            <div class="signature-box"></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th style="width: 30%;">Head of Unit, Vital Registration (State):</th>
+                        <td style="width: 70%;">
+                            <div class="signature-box"></div>
+                        </td>
+                        <th style="width: 30%;">State Director:</th>
+                        <td style="width: 70%;">
+                            <div class="signature-box"></div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+</body>
+</html>

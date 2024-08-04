@@ -1,0 +1,78 @@
+{% extends "base_employee.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+        <div class="px-4 py-5 sm:px-6 flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 h-20 w-20">
+                    {% if employee.passport %}
+                        <img src="{{ employee.passport.url }}" alt="{{ employee.firstName }} {{ employee.lastName }}" class="h-20 w-20 rounded-full object-cover">
+                    {% else %}
+                        <div class="h-20 w-20 rounded-full bg-gray-300 flex items-center justify-center text-gray-500">
+                            <span class="text-2xl">{{ employee.firstName|first }}{{ employee.lastName|first }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="ml-5">
+                    <h2 class="text-2xl font-bold text-gray-900">
+                        Welcome, {{ employee.firstName }} {{ employee.lastName }}
+                    </h2>
+                    <p class="text-sm text-gray-500">IPPIS Number: {{ employee.ippisNumber }}</p>
+                </div>
+            </div>
+            <div class="flex space-x-4">
+                <a href="{% url 'employee_data'%}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    View Details
+                </a>
+                <a href="{% url 'generate_employee_pdf'%}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    Download PDF
+                </a>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="mb-8">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-2">Profile Completion</h3>
+        <div class="relative pt-1">
+            <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200">
+                <div style="width:{{ completion_percentage }}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500 transition-all duration-500"></div>
+            </div>
+            <p class="text-right text-sm text-gray-600">{{ completion_percentage|floatformat:0 }}% Complete</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {% for section in sections %}
+            {% if section.name != 'Spouse Information' or employee.maritalStatus == 'M' %}
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-medium text-gray-900">{{ section.name }}</h3>
+                            {% if section.is_completed %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                    Updated
+                                </span>
+                            {% else %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                    Not Updated
+                                </span>
+                            {% endif %}
+                        </div>
+                        <p class="text-sm text-gray-500 mb-4">{{ section.description }}</p>
+                        <a href="{{ section.url }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            {% if section.is_completed %}
+                                Update
+                            {% else %}
+                                Complete
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

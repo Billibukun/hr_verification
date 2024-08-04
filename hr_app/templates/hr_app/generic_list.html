@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="bg-[#f2f5f0] min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-4xl font-bold text-[#1d741b]">{{ model_name_plural|title }}</h1>
+            {% if can_add %}
+                <a href="{% url add_url_name %}" class="bg-[#1d741b] hover:bg-[#ab8206] text-white font-semibold py-2 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105 shadow-md">
+                    + Add {{ model_name }}
+                </a>
+            {% endif %}
+        </div>
+
+        <div class="mb-6">
+            <form method="get" class="flex items-center">
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Search..." class="w-full px-4 py-2 rounded-l-full border-2 border-[#1d741b] focus:outline-none focus:border-[#ab8206]">
+                <button type="submit" class="bg-[#1d741b] hover:bg-[#ab8206] text-white font-semibold py-2 px-6 rounded-r-full transition duration-300 ease-in-out">
+                    Search
+                </button>
+            </form>
+        </div>
+
+        <div class="bg-white shadow-xl rounded-lg overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-[#1d741b]">
+                    <tr>
+                        {% for field in object_list.0|get_visible_fields %}
+                            <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                                {{ field.verbose_name|title }}
+                            </th>
+                        {% endfor %}
+                        <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for object in object_list %}
+                        <tr>
+                            {% for field in object|get_visible_fields %}
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {% if field.name == 'name' or field.name == 'title' %}
+                                        <span class="font-medium">{{ object|getattribute:field.name }}</span>
+                                    {% elif field.is_relation %}
+                                        {{ object|getattribute:field.name|default_if_none:"" }}
+                                    {% else %}
+                                        {{ object|getattribute:field.name|default_if_none:"" }}
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <a href="{% url detail_url_name object|getattribute:pk_field %}" class="text-[#1d741b] hover:text-[#ab8206] mr-3 transition-colors duration-200">View</a>
+                                {% if can_add %}
+                                    <a href="{% url edit_url_name object|getattribute:pk_field %}" class="text-[#1d741b] hover:text-[#ab8206] transition-colors duration-200">Edit</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="{{ object_list.0|get_visible_fields|length|add:1 }}" class="px-6 py-4 text-center text-sm text-gray-500">
+                                No {{ model_name_plural }} found.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+            <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4 rounded-lg shadow-md">
+                <div class="flex-1 flex justify-between sm:hidden">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Previous
+                        </a>
+                    {% endif %}
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Next
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            Showing <span class="font-medium">{{ page_obj.start_index }}</span> to <span class="font-medium">{{ page_obj.end_index }}</span> of <span class="font-medium">{{ page_obj.paginator.count }}</span> results
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            {% if page_obj.has_previous %}
+                                <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Previous</span>
+                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                            {% endif %}
+                            {% for i in page_obj.paginator.page_range %}
+                                {% if page_obj.number == i %}
+                                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-[#1d741b] text-sm font-medium text-white">
+                                        {{ i }}
+                                    </span>
+                                {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                                    <a href="?page={{ i }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        {{ i }}
+                                    </a>
+                                {% endif %}
+                            {% endfor %}
+                            {% if page_obj.has_next %}
+                                <a href="?page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Next</span>
+                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                            {% endif %}
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="bg-secondary min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold text-primary mb-8">File Number Discrepancies</h1>
+
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:px-6">
+                <h2 class="text-xl font-semibold text-primary">Staff Audit Duplicates</h2>
+            </div>
+            <div class="border-t border-gray-200">
+                <ul class="divide-y divide-gray-200">
+                    {% for duplicate in staff_audit_duplicates|slice:":12" %}
+                        <li class="px-4 py-4 sm:px-6 hover:bg-gray-50">
+                            <a href="{% url 'file_number_detail' duplicate.fileNumber %}" class="flex justify-between items-center">
+                                <span class="text-primary font-medium">{{ duplicate.fileNumber }}</span>
+                                <span class="text-gray-500">{{ duplicate.count }} records</span>
+                            </a>
+                        </li>
+                    {% empty %}
+                        <li class="px-4 py-4 sm:px-6">No duplicates found in Staff Audit records.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:px-6">
+                <h2 class="text-xl font-semibold text-primary">Employee Duplicates</h2>
+            </div>
+            <div class="border-t border-gray-200">
+                <ul class="divide-y divide-gray-200">
+                    {% for duplicate in employee_duplicates|slice:":12" %}
+                        <li class="px-4 py-4 sm:px-6 hover:bg-gray-50">
+                            <a href="{% url 'file_number_detail' duplicate.fileNumber %}" class="flex justify-between items-center">
+                                <span class="text-primary font-medium">{{ duplicate.fileNumber }}</span>
+                                <span class="text-gray-500">{{ duplicate.count }} records</span>
+                            </a>
+                        </li>
+                    {% empty %}
+                        <li class="px-4 py-4 sm:px-6">No duplicates found in Employee records.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        {% if staff_audit_duplicates.count > 12 or employee_duplicates.count > 12 %}
+            <div class="mt-8 flex justify-center">
+                <a href="{% url 'file_number_discrepancies' %}?page=2" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-green-700">
+                    View More
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

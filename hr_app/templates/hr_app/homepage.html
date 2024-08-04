@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NPC HR Verification System{% endblock %}</title>
+    {% load static %}
+    {% load tailwind_tags %}
+    {% tailwind_css %}
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="h-full">
+    <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 p-4">
+        <div class="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 bg-white rounded-2xl shadow-lg">
+            <div class="text-center mb-8 sm:mb-12">
+                <img src="{% static 'images/npc_logo.png' %}" alt="NPC Logo" class="w-16 sm:w-20 mx-auto mb-4 sm:mb-6 transform hover:scale-105 transition-transform duration-300">
+                <h1 class="text-3xl sm:text-4xl font-extrabold text-1d741b mb-2">National Population Commission</h1>
+                <h2 class="text-xl sm:text-2xl font-semibold text-gray-700">HR Verification System</h2>
+            </div>
+            
+            <div class="text-center mb-8 sm:mb-12 space-y-6 sm:space-y-8">
+                <p class="text-lg sm:text-xl text-gray-600 leading-relaxed">
+                    Welcome to the NPC HR Verification System. We've streamlined the process of verifying and updating employee information to ensure accuracy and efficiency.
+                </p>
+                
+                <div class="bg-green-50 rounded-xl p-4 sm:p-6 shadow-inner">
+                    <h3 class="text-xl sm:text-2xl font-bold text-1d741b mb-4 flex items-center justify-center">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                        </svg>
+                        What to do:
+                    </h3>
+                    <ul class="space-y-3 text-left sm:text-lg text-gray-700">
+                        <li class="flex items-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-3 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Log in using your IPPIS number</span>
+                        </li>
+                        <li class="flex items-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-3 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Verify and update your personal and employment information</span>
+                        </li>
+                        <li class="flex items-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-3 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Check for any discrepancies in your records</span>
+                        </li>
+                        <li class="flex items-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-3 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Submit any necessary documentation</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6">
+                <a href="{% url 'employee_login' %}" class="bg-black hover:bg-gray-800 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-full transition duration-300 transform hover:scale-105 flex items-center justify-center">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                    Employee Login
+                </a>
+                <a href="{% url 'admin_login' %}" class="bg-black hover:bg-gray-800 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-full transition duration-300 transform hover:scale-105 flex items-center justify-center">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                    </svg>
+                    Admin Login
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

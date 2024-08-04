@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="bg-secondary min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold text-primary mb-8">Manage Discrepancies</h1>
+
+        <div class="mb-4">
+            <form method="get" class="flex items-center">
+                <input type="text" name="query" placeholder="Search discrepancies..." value="{{ query }}" class="flex-grow p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-primary">
+                <button type="submit" class="bg-primary text-white px-4 py-2 rounded-r-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-primary">
+                    Search
+                </button>
+            </form>
+        </div>
+
+        <div class="bg-white shadow overflow-hidden sm:rounded-md">
+            <ul class="divide-y divide-gray-200">
+                {% for discrepancy in page_obj %}
+                    <li>
+                        <a href="{% url 'discrepancy_detail' discrepancy.id %}" class="block hover:bg-gray-50">
+                            <div class="px-4 py-4 sm:px-6">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-sm font-medium text-primary truncate">
+                                        {{ discrepancy.employee.firstName }} {{ discrepancy.employee.lastName }} - {{ discrepancy.get_discrepancyType_display }}
+                                    </p>
+                                    <div class="ml-2 flex-shrink-0 flex">
+                                        <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if discrepancy.isResolved %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                            {{ discrepancy.isResolved|yesno:"Resolved,Unresolved" }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="mt-2 sm:flex sm:justify-between">
+                                    <div class="sm:flex">
+                                        <p class="flex items-center text-sm text-gray-500">
+                                            Audit Value: {{ discrepancy.auditValue }}
+                                        </p>
+                                    </div>
+                                    <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                                        <p>
+                                            Employee Value: {{ discrepancy.employeeValue }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </li>
+                {% empty %}
+                    <li class="px-4 py-4 sm:px-6">
+                        <p class="text-sm text-gray-500">No discrepancies found.</p>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        {% include "pagination.html" with page_obj=page_obj %}
+    </div>
+</div>
+{% endblock %}

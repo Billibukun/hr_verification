@@ -1,0 +1,17 @@
+level,name,description,perDiem,localRunning,estacode,assumptionOfDuty
+1,Grade Level 1,Junior Staff,10000,3000,208,3000
+2,Grade Level 2,Junior Staff,10000,3000,208,3000
+3,Grade Level 3,Junior Staff,10000,3000,208,3000
+4,Grade Level 4,Junior Staff,10000,3000,208,3000
+5,Grade Level 5,Junior Staff,15000,4500,208,3000
+6,Grade Level 6,Junior Staff,15000,4500,208,3000
+7,Grade Level 7,Junior Staff,15000,4500,381,9000
+8,Grade Level 8,Senior Staff,17500,5250,381,9000
+9,Grade Level 9,Senior Staff,17500,5250,381,9000
+10,Grade Level 10,Senior Staff,17500,5250,381,9000
+12,Grade Level 12,Senior Staff,20000,6000,381,9000
+13,Grade Level 13,Senior Staff,20000,6000,381,9000
+14,Grade Level 14,Senior Staff,25000,7500,381,9000
+15,Grade Level 15,Directorate,25000,7500,425,13000
+16,Grade Level 16,Directorate,37500,11250,425,13000
+17,Grade Level 17,Director,37500,11250,425,13000

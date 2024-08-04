@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-primary mb-8">Edit File Number</h1>
+
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                {{ employee.firstName }} {{ employee.lastName }}
+            </h3>
+            <form method="post">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <div class="mt-4 flex justify-end">
+                    <button type="submit" class="bg-primary hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                        Update File Number
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="mt-8">
+        <a href="{% url 'file_number_detail' employee.fileNumber %}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
+            Back to File Number Detail
+        </a>
+    </div>
+</div>
+{% endblock %}

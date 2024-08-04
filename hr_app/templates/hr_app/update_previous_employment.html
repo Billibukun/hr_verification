@@ -1,0 +1,55 @@
+{% extends "base_employee.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mx-auto py-8">
+    <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-8">
+        <h2 class="text-3xl font-semibold mb-6 text-gray-900">Update Previous Employment Information</h2>
+
+        <form method="post">
+            {% csrf_token %}
+            {{ formset.management_form }}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {% for form in formset %}
+                    <div class="bg-gray-50 p-4 rounded-lg shadow">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-700">Previous Employment {{ forloop.counter }}</h3>
+                        {% for field in form.visible_fields %}
+                            <div class="mb-4">
+                                {{ field|as_crispy_field }}
+                            </div>
+                        {% endfor %}
+                        {% for hidden in form.hidden_fields %}
+                            {{ hidden }}
+                        {% endfor %}
+                    </div>
+                    {% if forloop.counter|divisibleby:2 and not forloop.last %}
+                        </div><div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <div class="mt-6 flex justify-between items-center">
+                <button type="button" id="add_more" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    Add Another Employment
+                </button>
+                <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                    Save
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('add_more').addEventListener('click', function() {
+        var form_idx = document.getElementById('id_form-TOTAL_FORMS').value;
+        var newForm = document.getElementById('empty_form').cloneNode(true);
+        newForm.innerHTML = newForm.innerHTML.replace(/__prefix__/g, form_idx);
+        newForm.setAttribute('class', 'bg-gray-50 p-4 rounded-lg shadow');
+        newForm.setAttribute('id', `form-${form_idx}`);
+        document.querySelector('.grid').appendChild(newForm);
+        document.getElementById('id_form-TOTAL_FORMS').value = parseInt(form_idx) + 1;
+    });
+</script>
+{% endblock %}

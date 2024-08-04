@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Discrepancy Detail - NPC HR Management System{% endblock %}
+
+{% block content %}
+<div class="bg-secondary min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold text-primary mb-8">Discrepancy Detail</h1>
+
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:px-6">
+                <h3 class="text-lg leading-6 font-medium text-primary">
+                    {{ discrepancy.employee.firstName }} {{ discrepancy.employee.lastName }}
+                </h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                    {{ discrepancy.get_discrepancyType_display }}
+                </p>
+            </div>
+            <div class="border-t border-gray-200 px-4 py-5 sm:p-0">
+                <dl class="sm:divide-y sm:divide-gray-200">
+                    <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Employee Value</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ discrepancy.employeeValue }}</dd>
+                    </div>
+                    <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Audit Value</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ discrepancy.auditValue }}</dd>
+                    </div>
+                    <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Description</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ discrepancy.description }}</dd>
+                    </div>
+                    <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Status</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {% if discrepancy.isResolved %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Resolved</span>
+                            {% else %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Unresolved</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        {% if not discrepancy.isResolved %}
+            <div class="mt-8">
+                <h2 class="text-2xl font-bold text-primary mb-4">Resolve Discrepancy</h2>
+                <form method="post" action="{% url 'resolve_discrepancy' discrepancy.id %}">
+                    {% csrf_token %}
+                    <div class="space-y-6">
+                        <div>
+                            <label for="resolution" class="block text-sm font-medium text-gray-700">Resolution</label>
+                            <select id="resolution" name="resolution" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
+                                <option value="employee">Use Employee Value</option>
+                                <option value="audit">Use Audit Value</option>
+                                <option value="custom">Custom Value</option>
+                            </select>
+                        </div>
+                        <div id="custom-value-field" class="hidden">
+                            <div id="custom-value-field" class="hidden">
+                                <label for="custom_value" class="block text-sm font-medium text-gray-700">Custom Value</label>
+                                <input type="text" name="custom_value" id="custom_value" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                            <div>
+                                <label for="comments" class="block text-sm font-medium text-gray-700">Comments</label>
+                                <textarea id="comments" name="comments" rows="3" class="shadow-sm focus:ring-primary focus:border-primary mt-1 block w-full sm:text-sm border border-gray-300 rounded-md"></textarea>
+                            </div>
+                            <div>
+                                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                                    Resolve Discrepancy
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const resolutionSelect = document.getElementById('resolution');
+            const customValueField = document.getElementById('custom-value-field');
+    
+            resolutionSelect.addEventListener('change', function() {
+                if (this.value === 'custom') {
+                    customValueField.classList.remove('hidden');
+                } else {
+                    customValueField.classList.add('hidden');
+                }
+            });
+        });
+    </script>
+    {% endblock %}
+    
+    {% endblock %}

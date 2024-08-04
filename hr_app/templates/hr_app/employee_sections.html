@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-3xl mx-auto">
+        <h2 class="text-3xl font-extrabold text-gray-900 mb-8">Update Your Information</h2>
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            {% for section in "personal,employment,education,previous_employment,financial,next_of_kin"|split:"," %}
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">{{ section|title|replace:"_"," " }}</h3>
+                        <div class="mt-2 max-w-xl text-sm text-gray-500">
+                            <p>Update your {{ section|replace:"_"," " }} information.</p>
+                        </div>
+                        <div class="mt-3">
+                            {% if employee|get_attr:"is"|add:section|title|add:"Updated" %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    Updated
+                                </span>
+                            {% else %}
+                                <a href="{% url 'update_section' section %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
+                                    Update
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="mt-8 flex justify-end">
+            <a href="{% url 'employee_data' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                View Data Sheet
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-3xl mx-auto">
+        <h2 class="text-3xl font-extrabold text-gray-900 mb-8">{{ employee.firstName }} {{ employee.lastName }} Data Sheet</h2>
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Personal Information</h3>
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+                    {% for field in personal_fields %}
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">{{ field.label }}</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ field.value }}</dd>
+                        </div>
+                    {% endfor %}
+                </dl>
+            </div>
+            <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Employment Information</h3>
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+                    {% for field in employment_fields %}
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">{{ field.label }}</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ field.value }}</dd>
+                        </div>
+                    {% endfor %}
+                </dl>
+            </div>
+            <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Financial Information</h3>
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+                    {% for field in financial_fields %}
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">{{ field.label }}</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ field.value }}</dd>
+                        </div>
+                    {% endfor %}
+                </dl>
+            </div>
+            <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Spouse Information</h3>
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+                    {% for field in spouse_fields %}
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">{{ field.label }}</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ field.value }}</dd>
+                        </div>
+                    {% endfor %}
+                </dl>
+            </div>
+            <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Next of Kin Information</h3>
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+                    {% for field in nok_fields %}
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">{{ field.label }}</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ field.value }}</dd>
+                        </div>
+                    {% endfor %}
+                </dl>
+            </div>
+            <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Education and Training Information</h3>
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-1">
+                    {% for field in education_fields %}
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">{{ field.label }}</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ field.value }}</dd>
+                        </div>
+                    {% endfor %}
+                </dl>
+            </div>
+            <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Previous Employment Information</h3>
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-1">
+                    {% for field in previous_employment_fields %}
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">{{ field.label }}</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ field.value }}</dd>
+                        </div>
+                    {% endfor %}
+                </dl>
+            </div>
+
+            <!-- Add sections for Education, Previous Employment, Financial Info, and Next of Kin -->
+        </div>
+        <div class="mt-8 flex justify-end">
+            <a href="{% url 'generate_employee_pdf' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
+                Download PDF
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

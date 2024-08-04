@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .custom-report-container {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .field-select {
+        height: 300px;
+        overflow-y: auto;
+        padding: 15px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background-color: #ffffff;
+    }
+    .field-select label {
+        display: block;
+        padding: 10px;
+        margin-bottom: 8px;
+        background-color: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    .field-select label:hover {
+        background-color: #e2e8f0;
+    }
+    .field-select input[type="checkbox"] {
+        margin-right: 10px;
+    }
+    .selected-fields {
+        min-height: 100px;
+        padding: 15px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background-color: #ffffff;
+    }
+    .selected-field {
+        padding: 10px;
+        margin-bottom: 8px;
+        background-color: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        cursor: move;
+    }
+    .form-input, .form-select, .form-textarea {
+        border-radius: 6px;
+        border-color: #e2e8f0;
+        padding: 8px 12px;
+    }
+    .btn {
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    .btn-primary {
+        background-color: #4a5568;
+        color: white;
+    }
+    .btn-primary:hover {
+        background-color: #2d3748;
+    }
+    .btn-secondary {
+        background-color: #718096;
+        color: white;
+    }
+    .btn-secondary:hover {
+        background-color: #4a5568;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-6 flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-800">Custom Report Builder</h1>
+        <a href="{{ request.META.HTTP_REFERER }}" class="btn btn-secondary">Back</a>
+    </div>
+    
+    <div class="custom-report-container p-8">
+        <form method="post" id="reportForm" class="space-y-6">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ form.name.id_for_label }}">
+                        Report Name
+                    </label>
+                    {{ form.name }}
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ form.model_name.id_for_label }}">
+                        Select Model
+                    </label>
+                    {{ form.model_name }}
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ form.description.id_for_label }}">
+                    Description
+                </label>
+                {{ form.description }}
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Available Fields</label>
+                    <div id="availableFields" class="field-select">
+                        <!-- Available fields will be populated here -->
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Selected Fields</label>
+                    <div id="selectedFields" class="selected-fields">
+                        <!-- Selected fields will be populated here -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ form.order_by.id_for_label }}">
+                        Order By
+                    </label>
+                    {{ form.order_by }}
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ form.items_per_page.id_for_label }}">
+                        Items Per Page
+                    </label>
+                    {{ form.items_per_page }}
+                </div>
+            </div>
+            
+            <div class="flex justify-end">
+                <button class="btn btn-primary" type="submit">
+                    Create Report
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#id_model_name, #id_order_by, #id_items_per_page').select2({
+            theme: 'classic',
+            width: '100%'
+        });
+
+        function updateFields() {
+            var modelName = $('#id_model_name').val();
+            $.ajax({
+                url: '{% url "get_model_fields" %}',
+                data: {
+                    'model_name': modelName
+                },
+                dataType: 'json',
+                success: function(data) {
+                    var availableFields = $('#availableFields');
+                    var selectedFields = $('#selectedFields');
+                    availableFields.empty();
+                    selectedFields.empty();
+                    
+                    $.each(data.fields, function(index, field) {
+                        availableFields.append(
+                            '<label><input type="checkbox" name="available_fields" value="' + field[0] + '"> ' + field[1] + '</label>'
+                        );
+                    });
+                    
+                    var orderBySelect = $('#id_order_by');
+                    orderBySelect.empty();
+                    orderBySelect.append('<option value="">---------</option>');
+                    $.each(data.order_by, function(index, field) {
+                        orderBySelect.append('<option value="' + field[0] + '">' + field[1] + '</option>');
+                    });
+                    orderBySelect.trigger('change');
+
+                    // Initialize Sortable for selected fields
+                    new Sortable(selectedFields[0], {
+                        animation: 150,
+                        ghostClass: 'bg-blue-100'
+                    });
+                }
+            });
+        }
+
+        $('#id_model_name').change(updateFields);
+        updateFields();  // Call on page load to populate fields for initial model
+
+        // Move fields between available and selected
+        $(document).on('change', '#availableFields input[type="checkbox"]', function() {
+            var field = $(this).parent();
+            if (this.checked) {
+                $('#selectedFields').append('<div class="selected-field" data-value="' + $(this).val() + '">' + field.text() + '</div>');
+                field.hide();
+            } else {
+                $('#selectedFields').find('[data-value="' + $(this).val() + '"]').remove();
+                field.show();
+            }
+        });
+
+        // Update hidden input with ordered fields before form submission
+        $('#reportForm').submit(function() {
+            var orderedFields = [];
+            $('#selectedFields .selected-field').each(function() {
+                orderedFields.push($(this).data('value'));
+            });
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'ordered_fields',
+                value: orderedFields.join(',')
+            }).appendTo('#reportForm');
+        });
+    });
+</script>
+{% endblock %}

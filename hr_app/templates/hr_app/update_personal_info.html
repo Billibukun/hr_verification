@@ -1,0 +1,32 @@
+{% extends "base_employee.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mx-auto py-8">
+    <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-8">
+        <h2 class="text-3xl font-semibold mb-6 text-gray-900">Update Personal Information</h2>
+        
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                {% for field in form %}
+                    <div class="flex flex-col">
+                        {{ field|as_crispy_field }}
+                        {% if field.help_text %}
+                            <p class="text-sm text-gray-500 mt-1">{{ field.help_text }}</p>
+                        {% endif %}
+                        {% if field.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="flex items-center justify-end mt-6">
+                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    Update Information
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

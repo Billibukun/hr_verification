@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="bg-secondary min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold text-primary mb-8">Verify Employee: {{ employee.firstName }} {{ employee.lastName }}</h1>
+
+        <div class="bg-white shadow-md rounded-lg overflow-hidden mb-8">
+            <div class="px-4 py-5 sm:p-6">
+                <h2 class="text-2xl font-semibold text-primary mb-4">Verification Summary</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {% for section, status in verification_status.items %}
+                        {% if section != 'Spouse Information' or employee.maritalStatus == 'M' %}
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium text-gray-500">{{ section }}:</span>
+                                {% if status %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        Approved
+                                    </span>
+                                {% else %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                        Not Approved
+                                    </span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        {% if discrepancies %}
+            <div class="bg-white shadow-md rounded-lg overflow-hidden mb-8">
+                <div class="px-4 py-5 sm:p-6">
+                    <h2 class="text-2xl font-semibold text-primary mb-4">Unresolved Discrepancies</h2>
+                    {% for discrepancy in discrepancies %}
+                        <div class="border-t border-gray-200 pt-4 mb-4">
+                            <h3 class="text-lg font-medium text-gray-900">{{ discrepancy.get_discrepancyType_display }}</h3>
+                            <p class="mt-1 text-sm text-gray-500">Audit Value: {{ discrepancy.auditValue|default:"Not provided" }}</p>
+                            <p class="mt-1 text-sm text-gray-500">Employee Value: {{ discrepancy.employeeValue|default:"Not provided" }}</p>
+                            <p class="mt-1 text-sm text-gray-500">Difference: {{ discrepancy.getDifference }}</p>
+                            <div class="mt-2">
+                                <a href="{% url 'resolve_discrepancy' discrepancy.id %}" class="text-primary hover:text-green-700">
+                                    Resolve Discrepancy
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="bg-white shadow-md rounded-lg overflow-hidden mb-8">
+            <div class="px-4 py-5 sm:p-6">
+                <h2 class="text-2xl font-semibold text-primary mb-4">Final Verification</h2>
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="mt-4">
+                        <button type="submit" class="bg-primary text-white px-6 py-3 rounded-full text-lg font-semibold hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" {% if discrepancies %}disabled{% endif %}>
+                            Complete Verification
+                        </button>
+                    </div>
+                </form>
+                {% if discrepancies %}
+                    <p class="mt-2 text-sm text-red-600">All discrepancies must be resolved before final verification.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

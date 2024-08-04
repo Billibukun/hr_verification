@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mx-auto mt-10 px-4">
+    <h2 class="text-3xl font-bold text-center text-blue-700 mb-8">Employee List</h2>
+    <div class="mb-4 flex justify-between items-center">
+        <form method="get" class="flex">
+            <input type="text" name="search" placeholder="Search employees..." class="form-input px-4 py-2 rounded-l-md" value="{{ request.GET.search }}">
+            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-r-md">Search</button>
+        </form>
+        <a href="{% url 'employee_create' %}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">Add New Employee</a>
+    </div>
+    <table class="min-w-full bg-white">
+        <thead>
+            <tr>
+                <th class="py-2 px-4 border-b">Name</th>
+                <th class="py-2 px-4 border-b">IPPIS Number</th>
+                <th class="py-2 px-4 border-b">Department</th>
+                <th class="py-2 px-4 border-b">Grade Level</th>
+                <th class="py-2 px-4 border-b">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for employee in employees %}
+            <tr>
+                <td class="py-2 px-4 border-b">{{ employee.firstName }} {{ employee.lastName }}</td>
+                <td class="py-2 px-4 border-b">{{ employee.ippisNumber }}</td>
+                <td class="py-2 px-4 border-b">{{ employee.department }}</td>
+                <td class="py-2 px-4 border-b">{{ employee.currentGradeLevel }}</td>
+                <td class="py-2 px-4 border-b">
+                    <a href="{% url 'employee_detail' employee.pk %}" class="text-blue-600 hover:text-blue-800">View</a>
+                    <a href="{% url 'employee_update' employee.pk %}" class="text-green-600 hover:text-green-800 ml-2">Edit</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="py-4 text-center">No employees found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% include 'hr_app/pagination.html' %}
+</div>
+{% endblock %}

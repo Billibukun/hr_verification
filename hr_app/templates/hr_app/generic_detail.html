@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-[#f2f5f0]">
+    <div class="mb-8 flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-[#000000]">{{ model_name }} Details</h1>
+        <div>
+            {% if can_edit %}
+                <a href="{{ edit_url }}" class="bg-[#1d741b] hover:bg-[#ab8206] text-white font-semibold py-2 px-4 rounded-full transition duration-300 ease-in-out mr-2">
+                    Edit
+                </a>
+            {% endif %}
+            <a href="{{ list_url }}" class="bg-[#1d741b] hover:bg-[#ab8206] text-white font-semibold py-2 px-4 rounded-full transition duration-300 ease-in-out">
+                Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="p-6">
+            {% for field in visible_fields %}
+                <div class="mb-4">
+                    <h3 class="text-sm font-semibold text-[#1d741b] uppercase">{{ field.verbose_name }}</h3>
+                    <p class="mt-1 text-lg text-[#000000]">{{ object|getattribute:field.name }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

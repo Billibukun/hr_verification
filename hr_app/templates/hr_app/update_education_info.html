@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mx-auto px-4 mt-6">
+    <div class="bg-white shadow-md rounded-lg p-6">
+        <h2 class="text-2xl font-bold text-[#1d741b] mb-4">Update Education Information</h2>
+
+        <form method="post">
+            {% csrf_token %}
+            {{ formset.management_form }}
+
+            <div id="education-forms">
+                {% for form in formset %}
+                    <div class="bg-[#f2f5f0] rounded-lg p-4 shadow-sm mb-4">
+                        <h3 class="text-lg font-bold text-[#1d741b] mb-2">Education Entry {{ forloop.counter }}</h3>
+                        {{ form|crispy }}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="mt-4">
+                <button type="button" id="add-education" class="bg-[#ab8206] hover:bg-[#8e6b05] text-white font-bold py-2 px-4 rounded">
+                    Add Another Education Entry
+                </button>
+            </div>
+
+            <div class="mt-6">
+                <button type="submit" class="bg-[#1d741b] hover:bg-[#165814] text-white font-bold py-2 px-4 rounded">
+                    Save
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addButton = document.getElementById('add-education');
+        const formsContainer = document.getElementById('education-forms');
+        let formCount = {{ formset.total_form_count }};
+
+        addButton.addEventListener('click', function() {
+            const newForm = formsContainer.children[0].cloneNode(true);
+            newForm.innerHTML = newForm.innerHTML.replace(/-\d+-/g, `-${formCount}-`);
+            formsContainer.appendChild(newForm);
+            formCount++;
+            document.getElementById('id_form-TOTAL_FORMS').value = formCount;
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}System Settings - NPC HR Management System{% endblock %}
+
+{% block content %}
+<div class="bg-gray-100 min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold text-primary mb-8">System Settings</h1>
+
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:px-6">
+                <h2 class="text-lg leading-6 font-medium text-gray-900">Configuration</h2>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Manage system-wide settings and configurations.</p>
+            </div>
+
+            <div class="border-t border-gray-200">
+                <form method="post">
+                    {% csrf_token %}
+                    {% for category, settings in settings_by_category.items %}
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">{{ category }}</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                {% for setting in settings %}
+                                    <div class="mb-4">
+                                        <label for="{{ setting.id }}" class="block text-sm font-medium text-gray-700">{{ setting.name }}</label>
+                                        <div class="mt-1">
+                                            {% if setting.setting_type == 'boolean' %}
+                                                <select name="{{ setting.id }}" id="{{ setting.id }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                                    <option value="True" {% if setting.value == "True" %}selected{% endif %}>Enabled</option>
+                                                    <option value="False" {% if setting.value == "False" %}selected{% endif %}>Disabled</option>
+                                                </select>
+                                            {% else %}
+                                                <input type="text" name="{{ setting.id }}" id="{{ setting.id }}" value="{{ setting.value }}" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                            {% endif %}
+                                        </div>
+                                        <p class="mt-2 text-sm text-gray-500">{{ setting.description }}</p>
+                                    </div>
+                                {% endfor %}
+                            </dd>
+                        </div>
+                    {% endfor %}
+                    <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
+                        <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- User Roles section -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:px-6">
+                <h2 class="text-lg leading-6 font-medium text-gray-900">User Roles</h2>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Manage user roles and permissions.</p>
+            </div>
+            <div class="border-t border-gray-200">
+                <ul class="divide-y divide-gray-200">
+                    {% for role, display in user_roles %}
+                        <li class="px-4 py-4 sm:px-6">
+                            <div class="flex items-center justify-between">
+                                <p class="text-sm font-medium text-gray-900">{{ display }}</p>
+                                <a href="#" class="text-primary hover:text-primary-dark">Edit Permissions</a>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
