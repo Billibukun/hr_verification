@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load custom_filters%}
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-primary mb-8">Staff Audit Information</h1>
+    <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+        {% for field_name, field_value in staff_audit_data %}
+            <div class="sm:col-span-1">
+                <dt class="text-sm font-medium text-gray-500">{{ field_name|title|replace_underscores }}</dt>
+                <dd class="mt-1 text-sm text-gray-900">{{ field_value }}</dd>
+            </div>
+        {% endfor %}
+    </dl>
+    <div class="mt-8">
+        <a href="{% url 'start_verification' staff_audit.ippisNumber %}" class="btn btn-primary">Start Verification</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,48 +1,43 @@
 {% extends "base.html" %}
-{% load static %}
-
+{% block title %}Search and Verify Employees{% endblock %}
 {% block content %}
-<div class="bg-secondary min-h-screen py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 class="text-3xl font-bold text-primary mb-8">Search and Verify Employees</h1>
-
-        <div class="bg-white shadow-md rounded-lg p-6 mb-8">
-            <form method="get" class="mb-4">
-                <div class="flex items-center border-b border-primary py-2">
-                    <input class="appearance-none bg-transparent border-none w-full text-gray-700 mr-3 py-1 px-2 leading-tight focus:outline-none" type="text" name="query" placeholder="Search by IPPIS, name, email, or phone..." value="{{ query }}">
-                    <button class="flex-shrink-0 bg-primary hover:bg-green-700 border-primary hover:border-green-700 text-sm border-4 text-white py-1 px-2 rounded" type="submit">
-                        Search
-                    </button>
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6 text-primary">Search and Verify Employees</h1>
+    
+    <div class="mb-4">
+        <form method="get" class="flex">
+            <input type="text" name="query" value="{{ query }}" placeholder="Search employees..." class="flex-grow px-4 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-primary">
+            <button type="submit" class="px-4 py-2 bg-primary text-white rounded-r-md hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary">Search</button>
+        </form>
+    </div>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for employee in employees %}
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-primary">
+                    {{ employee.firstName }} {{ employee.lastName }}
+                </h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">IPPIS: {{ employee.ippisNumber }}</p>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Email: {{ employee.emailAddress }}</p>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Phone: {{ employee.phoneNumber }}</p>
+                <div class="mt-3">
+                    {% if employee.isVerified %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Verified</span>
+                    {% else %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending Verification</span>
+                    {% endif %}
                 </div>
-            </form>
-
-            {% if employees %}
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {% for employee in employees %}
-                        <div class="bg-white shadow-md rounded-lg overflow-hidden">
-                            <div class="px-4 py-5 sm:p-6">
-                                <h3 class="text-lg leading-6 font-medium text-gray-900">
-                                    {{ employee.firstName }} {{ employee.lastName }}
-                                </h3>
-                                <div class="mt-2 max-w-xl text-sm text-gray-500">
-                                    <p>IPPIS: {{ employee.ippisNumber }}</p>
-                                    <p>Email: {{ employee.emailAddress }}</p>
-                                    <p>Phone: {{ employee.phoneNumber }}</p>
-                                </div>
-                                <div class="mt-5">
-                                    <a href="{% url 'employee_detail' employee.id %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-                                        View Details
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
+                <div class="mt-4">
+                    <a href="{% url 'employee_detail' employee.id %}" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-primary hover:bg-accent focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                        View Details
+                    </a>
                 </div>
-                {% include "pagination.html" with page_obj=employees %}
-            {% else %}
-                <p class="text-gray-500">No employees found.</p>
-            {% endif %}
+            </div>
         </div>
+        {% empty %}
+        <p class="text-gray-500">No employees found matching your search criteria.</p>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}

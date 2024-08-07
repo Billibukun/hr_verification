@@ -1,0 +1,13 @@
+graph TD
+    A[Search Employee] --> B[View Employee Summary]
+    B --> C{Any Discrepancies?}
+    C -->|Yes| D[Review Discrepancy]
+    D --> E{Approve or Reject?}
+    E -->|Approve| F[Mark Field as Verified]
+    E -->|Reject| G[Open Edit Form for Field]
+    G --> H[Update Field Value]
+    H --> F
+    F --> I{All Fields Verified?}
+    I -->|No| C
+    I -->|Yes| J[Complete Verification]
+    C -->|No| J

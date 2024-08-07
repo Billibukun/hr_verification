@@ -1,44 +1,171 @@
-{% load static %}
-{% load static tailwind_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}NPC HR Management System{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    {% tailwind_css %}
-    <style>
-        .bg-primary { background-color: #1d741b; }
-        .bg-secondary { background-color: #f2f5f0; }
-        .text-primary { color: #1d741b; }
-        .text-accent { color: #ab8206; }
+    <title>{% block title %}HR Verification System{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1d741b',
+                        secondary: '#f2f5f0',
+                        accent: '#ab8206',
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .bg-primary { background-color: #1d741b; }
+            .bg-secondary { background-color: #f2f5f0; }
+            .text-primary { color: #1d741b; }
+            .text-accent { color: #ab8206; }
+        }
     </style>
-    {% block extra_css %}{% endblock %}
+    <script>
+        $(document).ready(function() {
+            // Dynamic LGA based on State selection
+            $('#id_stateOfOrigin, #id_stateOfPosting').change(function() {
+                var stateId = $(this).val();
+                var lgaSelect = $(this).attr('id') === 'id_stateOfOrigin' ? $('#id_lgaOfOrigin') : $('#id_station');
+                lgaSelect.empty();
+                if (stateId) {
+                    $.getJSON(`/api/lgas/${stateId}/`, function(data) {
+                        lgaSelect.append(new Option('Select LGA', ''));
+                        $.each(data, function(index, item) {
+                            lgaSelect.append(new Option(item.name, item.id));
+                        });
+                    });
+                }
+            });
+
+            // Dynamic Division based on Department selection
+            $('#id_department').change(function() {
+                var deptId = $(this).val();
+                var divisionSelect = $('#id_division');
+                divisionSelect.empty();
+                if (deptId) {
+                    $.getJSON(`/api/divisions/${deptId}/`, function(data) {
+                        divisionSelect.append(new Option('Select Division', ''));
+                        $.each(data, function(index, item) {
+                            divisionSelect.append(new Option(item.name, item.id));
+                        });
+                    });
+                }
+            });
+
+            // Trigger change event on page load if values are pre-selected
+            $('#id_stateOfOrigin, #id_stateOfPosting, #id_department').trigger('change');
+        });
+    </script>
+    {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-secondary min-h-screen flex flex-col">
-    <nav class="bg-primary text-white">
+    <nav class="bg-primary">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 <div class="flex items-center">
-                    <a href="{% url 'admin_dashboard' %}" class="font-bold text-xl">NPC HR System</a>
+                    <div class="flex-shrink-0">
+                        <span class="text-white font-bold text-xl">HR System</span>
+                    </div>
+                    <div class="hidden md:block">
+                        <div class="ml-10 flex items-baseline space-x-4">
+                            {% if user.is_authenticated %}
+                                <a href="{% url 'admin_dashboard' %}" class="text-white hover:bg-accent hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                                <a href="{% url 'profile' %}" class="text-white hover:bg-accent hover:text-white px-3 py-2 rounded-md text-sm font-medium">Profile</a>
+                                <a href="{% url 'logout' %}" class="text-white hover:bg-accent hover:text-white px-3 py-2 rounded-md text-sm font-medium">Logout</a>
+                            {% else %}
+                                <a href="*#" class="text-white hover:bg-accent hover:text-white px-3 py-2 rounded-md text-sm font-medium">Login</a>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
-                <div class="flex items-center">
-                    <a href="{% url 'admin_dashboard' %}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-green-700">Dashboard</a>
-</div>
+                <div class="md:hidden">
+                    <!-- Mobile menu button -->
+                    <button type="button" class="inline-flex items-center justify-center p-2 rounded-md text-white hover:text-white hover:bg-accent focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" aria-controls="mobile-menu" aria-expanded="false">
+                        <span class="sr-only">Open main menu</span>
+                        <!-- Icon when menu is closed -->
+                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        <!-- Icon when menu is open -->
+                        <svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile menu, show/hide based on menu state. -->
+        <div class="md:hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'admin_dashboard' %}" class="text-white hover:bg-accent hover:text-white block px-3 py-2 rounded-md text-base font-medium">Dashboard</a>
+                    <a href="{% url 'profile' %}" class="text-white hover:bg-accent hover:text-white block px-3 py-2 rounded-md text-base font-medium">Profile</a>
+                    <a href="{% url 'logout' %}" class="text-white hover:bg-accent hover:text-white block px-3 py-2 rounded-md text-base font-medium">Logout</a>
+                {% else %}
+                    <a href="#" class="text-white hover:bg-accent hover:text-white block px-3 py-2 rounded-md text-base font-medium">Login</a>
+                {% endif %}
             </div>
         </div>
     </nav>
 
-    <main class="flex-grow">
+    {% if messages %}
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        {% for message in messages %}
+        <div class="bg-secondary border-l-4 border-primary text-primary p-4 mb-4" role="alert">
+            <p>{{ message }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="flex-grow max-w-7xl w-full mx-auto py-6 sm:px-6 lg:px-8">
         {% block content %}{% endblock %}
     </main>
 
     <footer class="bg-primary text-white py-4">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p>&copy; {% now "Y" %} National Population Commission. All rights reserved.</p>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p class="text-center">© 2023 HR Verification System. All rights reserved.</p>
         </div>
     </footer>
+    <script>
+        $(document).ready(function() {
+            function updateDropdown(selectElement, url, placeholder) {
+                var selectedId = $(selectElement).val();
+                var targetSelect = $(selectElement).data('target');
+                $(targetSelect).empty().append($('<option>').text(placeholder).val(''));
+                if (selectedId) {
+                    $.getJSON(url + selectedId + '/', function(data) {
+                        $.each(data, function(index, item) {
+                            $(targetSelect).append($('<option>').text(item.name).val(item.id));
+                        });
+                        // Trigger change event to update any dependent dropdowns
+                        $(targetSelect).trigger('change');
+                    });
+                }
+            }
+    
+            // State and LGA dropdowns
+            $('[data-dropdown="state"]').change(function() {
+                updateDropdown(this, '/api/lgas/', 'Select LGA');
+            });
+    
+            // Department and Division dropdowns
+            $('[data-dropdown="department"]').change(function() {
+                updateDropdown(this, '/api/divisions/', 'Select Division');
+            });
+    
+            // Trigger change event on page load for pre-selected values
+            $('[data-dropdown="state"], [data-dropdown="department"]').trigger('change');
+        });
+    </script>
 
     {% block extra_js %}{% endblock %}
 </body>

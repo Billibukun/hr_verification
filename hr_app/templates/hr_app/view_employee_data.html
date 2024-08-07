@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8 text-gray-800">Employee Data: {{ employee.firstName }} {{ employee.lastName }}</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Personal Information</h2>
+            <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                {% for field, value in employee_data %}
+                    {% if field in 'ippisNumber,fileNumber,lastName,firstName,middleName,dateOfBirth,gender,maritalStatus,phoneNumber,emailAddress,residentialAddress,stateOfOrigin,lgaOfOrigin' %}
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">{{ field|title }}</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ value|default_if_none:"-" }}</dd>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </dl>
+        </div>
+        
+        <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Employment Information</h2>
+            <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                {% for field, value in employee_data %}
+                    {% if field in 'dateOfFirstAppointment,dateOfPresentAppointment,dateOfConfirmation,currentGradeLevel,currentStep,department,stateOfPosting,station,cadre,presentAppointment' %}
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">{{ field|title }}</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ value|default_if_none:"-" }}</dd>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </dl>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Financial Information</h2>
+            <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                {% for field, value in employee_data %}
+                    {% if field in 'bank,accountNumber,accountType,pfa,pfaNumber' %}
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">{{ field|title }}</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ value|default_if_none:"-" }}</dd>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </dl>
+        </div>
+        
+        <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Next of Kin Information</h2>
+            <div class="grid grid-cols-1 gap-y-6">
+                <div>
+                    <h3 class="text-lg font-medium mb-2 text-gray-600">Next of Kin 1</h3>
+                    <dl class="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
+                        {% for field, value in employee_data %}
+                            {% if field in 'nok1_name,nok1_relationship,nok1_address,nok1_phoneNumber' %}
+                                <div class="sm:col-span-1">
+                                    <dt class="text-sm font-medium text-gray-500">{{ field|title|cut:"Nok1_" }}</dt>
+                                    <dd class="mt-1 text-sm text-gray-900">{{ value|default_if_none:"-" }}</dd>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </dl>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium mb-2 text-gray-600">Next of Kin 2</h3>
+                    <dl class="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
+                        {% for field, value in employee_data %}
+                            {% if field in 'nok2_name,nok2_relationship,nok2_address,nok2_phoneNumber' %}
+                                <div class="sm:col-span-1">
+                                    <dt class="text-sm font-medium text-gray-500">{{ field|title|cut:"Nok2_" }}</dt>
+                                    <dd class="mt-1 text-sm text-gray-900">{{ value|default_if_none:"-" }}</dd>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-8">
+        <a href="{% url 'search_staff' %}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            Back to Search
+        </a>
+    </div>
+</div>
+{% endblock %}

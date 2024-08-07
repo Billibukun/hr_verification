@@ -1,313 +1,45 @@
 {% extends "base.html" %}
-{% load static %}
-
+{% block title %}Employee Details: {{ employee.firstName }} {{ employee.lastName }}{% endblock %}
 {% block content %}
-<div class="bg-secondary min-h-screen py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 class="text-3xl font-bold text-primary mb-8">{{ employee.firstName }} {{ employee.lastName }}</h1>
-
-        <!-- Passport Section -->
-        <div class="bg-white shadow-md rounded-lg overflow-hidden mb-8">
-            <div class="px-4 py-5 sm:p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-semibold text-primary">Passport</h2>
-                    <div id="passport-approval-buttons">
-                        {% if not employee.isPassportApproved %}
-                            <button onclick="approveSection('passport', {{ employee.id }})" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary mr-2">
-                                Approve
-                            </button>
-                            <button onclick="rejectSection('passport', {{ employee.id }})" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                Reject
-                            </button>
-                        {% else %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                Approved
-                            </span>
-                        {% endif %}
-                    </div>
-                </div>
-                {% if employee.passport %}
-                    <img src="{{ employee.passport.url }}" alt="Employee Passport" class="w-40 h-40 object-cover rounded-lg">
-                {% else %}
-                    <p class="text-gray-500">No passport uploaded</p>
-                {% endif %}
-            </div>
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6 text-primary">Employee Details: {{ employee.firstName }} {{ employee.lastName }}</h1>
+    
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+        <div class="px-4 py-5 sm:px-6">
+            <h3 class="text-lg leading-6 font-medium text-primary">Personal Information</h3>
         </div>
-
-        <!-- Personal Information Section -->
-        <div class="bg-white shadow-md rounded-lg overflow-hidden mb-8">
-            <div class="px-4 py-5 sm:p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-semibold text-primary">Personal Information</h2>
-                    <div id="personal-info-approval-buttons">
-                        {% if not employee.isPersonalInfoApproved %}
-                            <button onclick="approveSection('personal_info', {{ employee.id }})" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary mr-2">
-                                Approve
-                            </button>
-                            <button onclick="rejectSection('personal_info', {{ employee.id }})" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                Reject
-                            </button>
-                        {% else %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                Approved
-                            </span>
-                        {% endif %}
-                    </div>
+        <div class="border-t border-gray-200 px-4 py-5 sm:p-0">
+            <dl class="sm:divide-y sm:divide-gray-200">
+                {% for field, value in personal_fields.items %}
+                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <dt class="text-sm font-medium text-gray-500">{{ field }}</dt>
+                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ value }}</dd>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {% for field, value in personal_fields.items %}
-                        <div>
-                            <span class="font-medium text-gray-500">{{ field }}:</span>
-                            <span class="ml-2 text-gray-900">{{ value }}</span>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Employment Information Section -->
-        <div class="bg-white shadow-md rounded-lg overflow-hidden mb-8">
-            <div class="px-4 py-5 sm:p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-semibold text-primary">Employment Information</h2>
-                    <div id="employment-info-approval-buttons">
-                        {% if not employee.isEmploymentInfoApproved %}
-                            <button onclick="approveSection('employment_info', {{ employee.id }})" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary mr-2">
-                                Approve
-                            </button>
-                            <button onclick="rejectSection('employment_info', {{ employee.id }})" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                Reject
-                            </button>
-                        {% else %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                Approved
-                            </span>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {% for field, value in employment_fields.items %}
-                        <div>
-                            <span class="font-medium text-gray-500">{{ field }}:</span>
-                            <span class="ml-2 text-gray-900">{{ value }}</span>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Financial Information Section -->
-        <div class="bg-white shadow-md rounded-lg overflow-hidden mb-8">
-            <div class="px-4 py-5 sm:p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-semibold text-primary">Financial Information</h2>
-                    <div id="financial-info-approval-buttons">
-                        {% if not employee.isFinancialInfoApproved %}
-                            <button onclick="approveSection('financial_info', {{ employee.id }})" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary mr-2">
-                                Approve
-                            </button>
-                            <button onclick="rejectSection('financial_info', {{ employee.id }})" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                Reject
-                            </button>
-                        {% else %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                Approved
-                            </span>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {% for field, value in financial_fields.items %}
-                        <div>
-                            <span class="font-medium text-gray-500">{{ field }}:</span>
-                            <span class="ml-2 text-gray-900">{{ value }}</span>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Next of Kin Information Section -->
-        <div class="bg-white shadow-md rounded-lg overflow-hidden mb-8">
-            <div class="px-4 py-5 sm:p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-semibold text-primary">Next of Kin Information</h2>
-                    <div id="next-of-kin-info-approval-buttons">
-                        {% if not employee.isNextOfKinInfoApproved %}
-                            <button onclick="approveSection('next_of_kin_info', {{ employee.id }})" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary mr-2">
-                                Approve
-                            </button>
-                            <button onclick="rejectSection('next_of_kin_info', {{ employee.id }})" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                Reject
-                            </button>
-                        {% else %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                Approved
-                            </span>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {% for field, value in nok_fields.items %}
-                        <div>
-                            <span class="font-medium text-gray-500">{{ field }}:</span>
-                            <span class="ml-2 text-gray-900">{{ value }}</span>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Education and Training Section -->
-        <div class="bg-white shadow-md rounded-lg overflow-hidden mb-8">
-            <div class="px-4 py-5 sm:p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-semibold text-primary">Education and Training</h2>
-                    <div id="education-info-approval-buttons">
-                        {% if not employee.isEducationInfoApproved %}
-                            <button onclick="approveSection('education_info', {{ employee.id }})" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary mr-2">
-                                Approve
-                            </button>
-                            <button onclick="rejectSection('education_info', {{ employee.id }})" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                Reject
-                            </button>
-                        {% else %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                Approved
-                            </span>
-                        {% endif %}
-                    </div>
-                </div>
-                {% for education in education_fields %}
-                    <div class="border-t border-gray-200 pt-4 mb-4">
-                        <h3 class="text-lg font-medium text-gray-900">{{ education.Title }}</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-                            {% for key, value in education.items %}
-                                {% if key != 'Title' %}
-                                    <div>
-                                        <span class="font-medium text-gray-500">{{ key }}:</span>
-                                        <span class="ml-2 text-gray-900">{{ value }}</span>
-                                    </div>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                    </div>
                 {% endfor %}
-            </div>
-        </div>
-
-        <!-- Previous Employment Section -->
-        <div class="bg-white shadow-md rounded-lg overflow-hidden mb-8">
-            <div class="px-4 py-5 sm:p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-semibold text-primary">Previous Employment</h2>
-                    <div id="previous-employment-approval-buttons">
-                        {% if not employee.isPreviousEmploymentApproved %}
-                            <button onclick="approveSection('previous_employment', {{ employee.id }})" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary mr-2">
-                                Approve
-                            </button>
-                            <button onclick="rejectSection('previous_employment', {{ employee.id }})" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                Reject
-                            </button>
-                        {% else %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                Approved
-                            </span>
-                        {% endif %}
-                    </div>
-                </div>
-                {% for employment in previous_employment_fields %}
-                    <div class="border-t border-gray-200 pt-4 mb-4">
-                        <h3 class="text-lg font-medium text-gray-900">{{ employment.Position }} at {{ employment.Employer }}</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-                            {% for key, value in employment.items %}
-                                {% if key != 'Position' and key != 'Employer' %}
-                                    <div>
-                                        <span class="font-medium text-gray-500">{{ key }}:</span>
-                                        <span class="ml-2 text-gray-900">{{ value }}</span>
-                                    </div>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        {% if employee.maritalStatus == 'M' %}
-        <!-- Spouse Information Section -->
-        <div class="bg-white shadow-md rounded-lg overflow-hidden mb-8">
-            <div class="px-4 py-5 sm:p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-semibold text-primary">Spouse Information</h2>
-                    <div id="spouse-info-approval-buttons">
-                        {% if not employee.isSpouseInfoApproved %}
-                            <button onclick="approveSection('spouse_info', {{ employee.id }})" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary mr-2">
-                                Approve
-                            </button>
-                            <button onclick="rejectSection('spouse_info', {{ employee.id }})" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                Reject
-                            </button>
-                        {% else %}
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                Approved
-                            </span>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {% for field, value in spouse_fields.items %}
-                        <div>
-                            <span class="font-medium text-gray-500">{{ field }}:</span>
-                            <span class="ml-2 text-gray-900">{{ value }}</span>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-        <div class="mt-8 flex justify-end">
-            <a href="{% url 'employee_verification' employee.id %}" class="bg-primary text-white px-6 py-3 rounded-full text-lg font-semibold hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-                Proceed to Verification
-            </a>
+            </dl>
         </div>
     </div>
+
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+        <div class="px-4 py-5 sm:px-6">
+            <h3 class="text-lg leading-6 font-medium text-primary">Employment Information</h3>
+        </div>
+        <div class="border-t border-gray-200 px-4 py-5 sm:p-0">
+            <dl class="sm:divide-y sm:divide-gray-200">
+                {% for field, value in employment_fields.items %}
+                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                    <dt class="text-sm font-medium text-gray-500">{{ field }}</dt>
+                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ value }}</dd>
+                </div>
+                {% endfor %}
+            </dl>
+        </div>
+    </div>
+
+    <div class="mt-8">
+        <a href="{% url 'employee_verification_summary' employee.id %}" class="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-primary hover:bg-accent focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+            Start Verification
+        </a>
+    </div>
 </div>
-
-{% block extra_js %}
-<script>
-function approveSection(section, employeeId) {
-    sendApprovalRequest(section, employeeId, true);
-}
-
-function rejectSection(section, employeeId) {
-    sendApprovalRequest(section, employeeId, false);
-}
-
-function sendApprovalRequest(section, employeeId, isApproved) {
-    fetch(`/employee/${employeeId}/approve-section/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRFToken': '{{ csrf_token }}'
-        },
-        body: `section=${section}&is_approved=${isApproved}`
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            alert(data.message);
-            location.reload();
-        } else {
-            alert('An error occurred. Please try again.');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
-    });
-}
-</script>
-{%endblock%}
-{%endblock%}
+{% endblock%}

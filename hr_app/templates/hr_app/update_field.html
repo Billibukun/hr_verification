@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Update {{ field_name|title }}{% endblock %}
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-2xl md:text-3xl font-bold mb-6 text-primary">Update {{ field_name|title }}</h1>
+    
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <form method="post" id="updateForm">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="id_{{ field_name }}" class="block text-sm font-medium text-gray-700">{{ field_name|title }}</label>
+                    {% if field_name in dropdown_fields %}
+                        {% if field_name == 'stateOfOrigin' or field_name == 'stateOfPosting' %}
+                            <select name="{{ field_name }}" id="id_{{ field_name }}" data-dropdown="state" data-target="#id_lga" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                <option value="">Select State</option>
+                                {% for state in states %}
+                                    <option value="{{ state.id }}" {% if state.id == field_form.initial.field_name %}selected{% endif %}>{{ state.name }}</option>
+                                {% endfor %}
+                            </select>
+                        {% elif field_name == 'lgaOfOrigin' or field_name == 'station' %}
+                            <select name="{{ field_name }}" id="id_{{ field_name }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                <option value="">Select LGA</option>
+                                {% for lga in lgas %}
+                                    <option value="{{ lga.id }}" {% if lga.id == field_form.initial.field_name %}selected{% endif %}>{{ lga.name }}</option>
+                                {% endfor %}
+                            </select>
+                        {% elif field_name == 'department' %}
+                            <select name="{{ field_name }}" id="id_{{ field_name }}" data-dropdown="department" data-target="#id_division" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                <option value="">Select Department</option>
+                                {% for dept in departments %}
+                                    <option value="{{ dept.id }}" {% if dept.id == field_form.initial.field_name %}selected{% endif %}>{{ dept.name }}</option>
+                                {% endfor %}
+                            </select>
+                        {% elif field_name == 'division' %}
+                            <select name="{{ field_name }}" id="id_{{ field_name }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                <option value="">Select Division</option>
+                                {% for div in divisions %}
+                                    <option value="{{ div.id }}" {% if div.id == field_form.initial.field_name %}selected{% endif %}>{{ div.name }}</option>
+                                {% endfor %}
+                            </select>
+                        {% else %}
+                            <select name="{{ field_name }}" id="id_{{ field_name }}" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                                {% for value, label in dropdown_choices %}
+                                    <option value="{{ value }}" {% if value == field_form.initial.field_name %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        {% endif %}
+                    {% else %}
+                        <input type="text" name="{{ field_name }}" value="{{ field_form.initial.field_name }}" id="id_{{ field_name }}" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                    {% endif %}
+                </div>
+                
+                {% if discrepancy_form %}
+                    <h2 class="text-xl font-semibold mt-6 mb-3 text-primary">Resolve Discrepancy</h2>
+                    {{ discrepancy_form|crispy }}
+                {% endif %}
+                
+                <div class="mt-6 flex flex-col sm:flex-row justify-between space-y-4 sm:space-y-0">
+                    <button type="submit" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-primary hover:bg-accent focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                        Update and Verify
+                    </button>
+                    <a href="{% url 'employee_verification_summary' employee.id %}" class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        function updateDropdown(selectElement, url, placeholder) {
+            var selectedId = $(selectElement).val();
+            var targetSelect = $(selectElement).data('target');
+            if (targetSelect) {
+                $(targetSelect).empty().append($('<option>').text(placeholder).val(''));
+                if (selectedId) {
+                    $.getJSON(url + selectedId + '/', function(data) {
+                        $.each(data, function(index, item) {
+                            $(targetSelect).append($('<option>').text(item.name).val(item.id));
+                        });
+                    });
+                }
+            }
+        }
+
+        // State and LGA dropdowns
+        $('[data-dropdown="state"]').change(function() {
+            updateDropdown(this, '/api/lgas/', 'Select LGA');
+        });
+
+        // Department and Division dropdowns
+        $('[data-dropdown="department"]').change(function() {
+            updateDropdown(this, '/api/divisions/', 'Select Division');
+        });
+
+        // Trigger change event on page load for pre-selected values
+        $('[data-dropdown="state"], [data-dropdown="department"]').trigger('change');
+    });
+</script>
+{% endblock %}

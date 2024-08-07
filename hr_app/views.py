@@ -551,6 +551,21 @@ class UserLoginView(LoginView):
 
 from django.contrib.auth.forms import AuthenticationForm
 
+@login_required
+def profile(request):
+    user = request.user
+    user_profile = get_object_or_404(UserProfile, user=user)
+
+    context = {
+        'user': user,
+        'profile': user_profile,
+        'allowed_states': user_profile.allowedStates.all(),
+        'allowed_departments': user_profile.allowedDepartments.all(),
+        'allowed_zones': user_profile.allowedZones.all(),
+    }
+    return render(request, 'hr_app/profile.html', context)
+
+
 def admin_login(request):
     if request.method == 'POST':
         form = AdminLoginForm(request.POST)
@@ -581,24 +596,6 @@ def profile(request):
     return render(request, 'hr_app/profile.html', {'form': form, 'user_profile': user_profile})
 
 
-@login_required
-def employee_profile(request):
-    employee = get_object_or_404(Employee, user=request.user)
-    
-    if request.method == 'POST':
-        form = EmployeeProfileForm(request.POST, instance=employee)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Your profile has been updated successfully.")
-            return redirect('employee_profile')
-    else:
-        form = EmployeeProfileForm(instance=employee)
-    
-    context = {
-        'employee': employee,
-        'form': form,
-    }
-    return render(request, 'hr_app/employee_profile.html', context)
 
 
 # views.py
@@ -620,10 +617,10 @@ def employee_login(request):
                     employee, created = Employee.objects.get_or_create(
                         ippisNumber=ippis_number)
                     request.session['employee_id'] = employee.id
-                    return redirect('employee_summary', ippis_number=ippis_number)
+                    return redirect('employee_dashboard', ippis_number=ippis_number)
                 else:
                     request.session['staff_audit_id'] = staff_audit.id
-                    return redirect('employee_data', ippis_number=ippis_number)
+                    return redirect('employee_summary', ippis_number=ippis_number)
             else:
                 messages.error(request, "No record found for this IPPIS number.")
     else:
@@ -922,7 +919,119 @@ def employee_data_sheet(request):
     return render(request, 'employee_data_sheet.html', {'employee': employee})
 
 
+
 def employee_data(request):
+    employee_id = request.session.get('employee_id')
+    if not employee_id:
+        messages.error(request, "No employee session found. Please log in again.")
+        return redirect('employee_login')
+
+    employee = get_object_or_404(Employee, id=employee_id)
+    next_of_kin = NextOfKin.objects.filter(employee=employee).first()
+
+    # Define fields to display and their values, but only if they're completed
+    personal_fields = []
+    if employee.isPersonalInfoUpdated:
+        personal_fields = [
+            {'label': 'Full Name', 'value': f'{employee.firstName} {employee.lastName}'},
+            {'label': 'Middle Name', 'value': employee.middleName},
+            {'label': 'IPPIS Number', 'value': employee.ippisNumber},
+            {'label': 'File Number', 'value': employee.fileNumber},
+            {'label': 'Date of Birth', 'value': employee.dateOfBirth},
+            {'label': 'Gender', 'value': dict(Employee.GENDER_CHOICES).get(employee.gender, '')},
+            {'label': 'Marital Status', 'value': dict(Employee.MARITAL_STATUS_CHOICES).get(employee.maritalStatus, '')},
+            {'label': 'Phone Number', 'value': employee.phoneNumber},
+            {'label': 'Email Address', 'value': employee.emailAddress},
+            {'label': 'Residential Address', 'value': employee.residentialAddress},
+            {'label': 'State of Origin', 'value': employee.stateOfOrigin},
+            {'label': 'LGA of Origin', 'value': employee.lgaOfOrigin},
+            {'label': 'NIN', 'value': employee.nin},
+        ]
+
+    employment_fields = []
+    if employee.isEmploymentInfoUpdated:
+        employment_fields = [
+            {'label': 'Date of First Appointment', 'value': employee.dateOfFirstAppointment},
+            {'label': 'Date of Present Appointment', 'value': employee.dateOfPresentAppointment},
+            {'label': 'Date of Confirmation', 'value': employee.dateOfConfirmation},
+            {'label': 'Cadre', 'value': dict(Employee.CADRE_CHOICES).get(employee.cadre, '')},
+            {'label': 'Current Grade Level', 'value': employee.currentGradeLevel},
+            {'label': 'Current Step', 'value': employee.currentStep},
+            {'label': 'Department', 'value': employee.department},
+            {'label': 'Division', 'value': employee.division},
+            {'label': 'State of Posting', 'value': employee.stateOfPosting},
+            {'label': 'Station', 'value': employee.station},
+            {'label': 'Present Appointment', 'value': employee.presentAppointment},
+            {'label': 'Last Promotion Date', 'value': employee.lastPromotionDate},
+            {'label': 'Retirement Date', 'value': employee.calculate_retirementDate()},
+            {'label': 'Is On Leave', 'value': employee.isOnLeave},
+            {'label': 'Is Under Disciplinary Action', 'value': employee.isUnderDisciplinaryAction},
+        ]
+
+    financial_fields = []
+    if employee.financialInfoUpdated:
+        financial_fields = [
+            {'label': 'Bank', 'value': employee.bank},
+            {'label': 'Account Type', 'value': dict(Employee.ACCOUNT_TYPES).get(employee.accountType, '')},
+            {'label': 'Account Number', 'value': employee.accountNumber},
+            {'label': 'PFA', 'value': employee.pfa},
+            {'label': 'PFA Number', 'value': employee.pfaNumber},
+        ]
+
+    spouse_fields = []
+    if employee.isSpouseInfoUpdated:
+        spouse_fields = [
+            {'label': 'Spouse Full Name', 'value': employee.spouse_fullName},
+            {'label': 'Spouse Occupation', 'value': employee.spouse_occupation},
+            {'label': 'Spouse Employer Name', 'value': employee.spouse_employerName},
+            {'label': 'Spouse Employment Period', 'value': employee.spouse_employmentPeriod},
+        ]
+
+    nok_fields = []
+    if employee.isNextOfKinUpdated and next_of_kin:
+        nok_fields = [
+            {'label': 'NOK 1 Full Name', 'value': next_of_kin.nok1_fullName},
+            {'label': 'NOK 1 Relationship', 'value': dict(NextOfKin.RELATIONSHIP_CHOICES).get(next_of_kin.nok1_relationship, '')},
+            {'label': 'NOK 1 Address', 'value': next_of_kin.nok1_address},
+            {'label': 'NOK 1 Phone Number', 'value': next_of_kin.nok1_phoneNumber},
+            {'label': 'NOK 2 Full Name', 'value': next_of_kin.nok2_fullName},
+            {'label': 'NOK 2 Relationship', 'value': dict(NextOfKin.RELATIONSHIP_CHOICES).get(next_of_kin.nok2_relationship, '')},
+            {'label': 'NOK 2 Address', 'value': next_of_kin.nok2_address},
+            {'label': 'NOK 2 Phone Number', 'value': next_of_kin.nok2_phoneNumber},
+        ]
+
+    education_fields = []
+    if employee.isEducationInfoUpdated:
+        for education in EducationAndTraining.objects.filter(employee=employee).all():
+            education_fields.append({
+                'label': 'Education & Training',
+                'value': f"{education.get_activityType_display()} - {education.title} ({education.get_level_display()}) at {education.institution}"
+            })
+
+    previous_employment_fields = []
+    if employee.isPreviousEmploymentUpdated:
+        for employment in PreviousEmployment.objects.filter(employee=employee).all():
+            previous_employment_fields.append({
+                'label': 'Previous Employment',
+                'value': f"Organisation: {employment.organisation}, Position: {employment.position}, Start Date: {employment.startDate}, End Date: {employment.endDate}"
+            })
+
+    context = {
+        'employee': employee,
+        'personal_fields': personal_fields,
+        'employment_fields': employment_fields,
+        'financial_fields': financial_fields,
+        'spouse_fields': spouse_fields,
+        'nok_fields': nok_fields,
+        'education_fields': education_fields,
+        'previous_employment_fields': previous_employment_fields,
+    }
+
+    return render(request, 'hr_app/employee_data.html', context)
+
+
+
+def employee_data_summary(request):
     employee_id = request.session.get('employee_id')
     employee = get_object_or_404(Employee, id=employee_id)
     next_of_kin = get_object_or_404(NextOfKin, employee=employee)
@@ -1102,187 +1211,6 @@ def employee_logout(request):
     return redirect('employee_login')
 
 
-class EmployeeUpdateView(TemplateView):
-    template_name = 'hr_app/employee_update.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        ippis_number = self.request.session.get('ippis_number')
-        employee, created = Employee.objects.get_or_create(
-            ippisNumber=ippis_number)
-
-        if created:
-            staff_audit_employee = StaffAuditEmployee.objects.get(
-                ippisNumber=ippis_number)
-            for field in employee._meta.fields:
-                if hasattr(staff_audit_employee, field.name):
-                    setattr(employee, field.name, getattr(
-                        staff_audit_employee, field.name))
-            employee.save()
-
-        context['employee'] = employee
-        context['personal_form'] = PersonalInfoForm(
-            instance=employee, prefix='personal')
-        context['employment_form'] = EmploymentInfoForm(
-            instance=employee, prefix='employment')
-        context['spouse_form'] = SpouseInfoForm(
-            instance=employee, prefix='spouse')
-        context['next_of_kin_formset'] = NextOfKinFormSet(
-            instance=employee, prefix='nok')
-        context['education_formset'] = EducationAndTrainingFormSet(
-            instance=employee, prefix='education')
-        context['financial_form'] = FinancialInfoForm(
-            instance=employee, prefix='financial')
-        context['previous_employment_formset'] = PreviousEmploymentFormSet(
-            instance=employee, prefix='previous_employment')
-        return context
-
-    def post(self, request, *args, **kwargs):
-        ippis_number = self.request.session.get('ippis_number')
-        employee = Employee.objects.get(ippisNumber=ippis_number)
-
-        forms = {
-            'personal': PersonalInfoForm(request.POST, instance=employee, prefix='personal'),
-            'employment': EmploymentInfoForm(request.POST, instance=employee, prefix='employment'),
-            'spouse': SpouseInfoForm(request.POST, instance=employee, prefix='spouse'),
-            'nok': NextOfKinFormSet(request.POST, instance=employee, prefix='nok'),
-            'education': EducationAndTrainingFormSet(request.POST, instance=employee, prefix='education'),
-            'financial': FinancialInfoForm(request.POST, instance=employee, prefix='financial'),
-            'previous_employment': PreviousEmploymentFormSet(request.POST, instance=employee, prefix='previous_employment'),
-        }
-
-        if all(form.is_valid() for form in forms.values()):
-            for form in forms.values():
-                if isinstance(form, (NextOfKinFormSet, EducationAndTrainingFormSet, PreviousEmploymentFormSet)):
-                    form.save()
-                else:
-                    form.save()
-            employee.isProfileUpdated = True
-            employee.save()
-            messages.success(request, "All information updated successfully.")
-            return redirect('employee_summary')
-        else:
-            for form in forms.values():
-                if form.errors:
-                    for field, error in form.errors.items():
-                        messages.error(request, f"{field}: {error}")
-            return self.render_to_response(self.get_context_data(**forms))
-
-
-class EmployeeSummaryView(TemplateView):
-    template_name = 'hr_app/employee_summary.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        ippis_number = self.request.session.get('ippis_number')
-        employee = Employee.objects.get(ippisNumber=ippis_number)
-        context['employee'] = employee
-        return context
-
-
-
-class EmployeeVerificationView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
-    model = Employee
-    template_name = 'hr_app/employee_verification.html'
-    context_object_name = 'employee'
-
-    def test_func(self):
-        return self.request.user.is_staff
-
-    def post(self, request, *args, **kwargs):
-        employee = self.get_object()
-        action = request.POST.get('action')
-        comments = request.POST.get('comments', '')
-
-        if action == 'verify':
-            employee.isVerified = True
-            employee.verifiedBy = request.user
-            employee.verificationDate = timezone.now()
-            employee.verificationComments = comments
-            employee.save()
-            messages.success(
-                request, f"Employee {employee.firstName} {employee.lastName} has been verified.")
-        elif action == 'reject':
-            employee.isVerified = False
-            employee.verificationComments = comments
-            employee.save()
-            messages.warning(
-                request, f"Employee {employee.firstName} {employee.lastName} verification has been rejected.")
-
-        return redirect('employee_list')
-
-
-class EmployeeListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
-    model = Employee
-    template_name = 'hr_app/employee_list.html'
-    context_object_name = 'employees'
-    paginate_by = 20
-
-    def test_func(self):
-        return self.request.user.is_staff
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        search_query = self.request.GET.get('search', '')
-        if search_query:
-            queryset = queryset.filter(
-                Q(firstName__icontains=search_query) |
-                Q(lastName__icontains=search_query) |
-                Q(ippisNumber__icontains=search_query)
-            )
-        return queryset
-
-
-class EmployeeCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
-    model = Employee
-    form_class = EmployeeForm
-    template_name = 'hr_app/employee_form.html'
-    success_url = reverse_lazy('employee_list')
-
-    def test_func(self):
-        return self.request.user.is_staff
-
-    def form_valid(self, form):
-        form.instance.created_by = self.request.user
-        return super().form_valid(form)
-
-
-class EmployeeReportView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
-    template_name = 'hr_app/employee_report.html'
-
-    def test_func(self):
-        return self.request.user.is_staff
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['total_employees'] = Employee.objects.count()
-        context['department_stats'] = Employee.objects.values(
-            'department__name').annotate(count=Count('id'))
-        context['grade_level_stats'] = Employee.objects.values(
-            'currentGradeLevel__name').annotate(count=Count('id'))
-        return context
-
-    def post(self, request, *args, **kwargs):
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="employee_report.csv"'
-
-        writer = csv.writer(response)
-        writer.writerow(['IPPIS Number', 'First Name',
-                        'Last Name', 'Department', 'Grade Level'])
-
-        employees = Employee.objects.all()
-        for employee in employees:
-            writer.writerow([
-                employee.ippisNumber,
-                employee.firstName,
-                employee.lastName,
-                employee.department.name if employee.department else '',
-                employee.currentGradeLevel.name if employee.currentGradeLevel else ''
-            ])
-
-        return response
-    
-
 def is_authorized(user, allowed_roles):
     return user.is_authenticated and user.userprofile.role in allowed_roles
 
@@ -1327,15 +1255,6 @@ def admin_dashboard(request):
 
     return render(request, 'hr_app/admin_dashboard.html', context)
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib import messages
-from django.utils import timezone
-from django.http import JsonResponse
-from django.db.models import Q
-from django.core.paginator import Paginator
-from .models import Employee, Discrepancy, StaffAuditEmployee, NextOfKin, EducationAndTraining, PreviousEmployment
-from .forms import EmployeeVerificationForm, DiscrepancyResolutionForm
 
 
 @login_required
@@ -1391,6 +1310,10 @@ def discrepancy_detail(request, discrepancy_id):
 def is_authorized(user, roles):
     return user.is_authenticated and user.userprofile.role in roles
 
+
+def is_authorized(user, roles):
+    return user.is_authenticated and user.userprofile.role in roles
+
 @login_required
 @user_passes_test(lambda u: is_authorized(u, ['DRUID_VIEWER', 'SUPER_ADMIN', 'DIRECTOR_GENERAL', 'HR_ADMIN', 'VERIFICATION_OFFICER']))
 def search_verify_employees(request):
@@ -1411,15 +1334,149 @@ def search_verify_employees(request):
         Q(department__in=request.user.userprofile.allowedDepartments.all())
     )
 
-    paginator = Paginator(employees, 12)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-
     context = {
         'query': query,
-        'employees': page_obj,
+        'employees': employees,
     }
     return render(request, 'hr_app/search_verify_employees.html', context)
+
+
+@login_required
+@user_passes_test(lambda u: is_authorized(u, ['DRUID_VIEWER', 'SUPER_ADMIN', 'DIRECTOR_GENERAL', 'HR_ADMIN', 'VERIFICATION_OFFICER']))
+def employee_verification_summary(request, employee_id):
+    employee = get_object_or_404(Employee, id=employee_id)
+    discrepancies = Discrepancy.objects.filter(employee=employee, isResolved=False)
+
+    if request.method == 'POST':
+        field_name = request.POST.get('field_name')
+        action = request.POST.get('action')
+        if field_name and action:
+            if action == 'verify':
+                setattr(employee, f"{field_name}_verified", True)
+                employee.save()
+                messages.success(request, f"{field_name.replace('_', ' ').title()} has been verified.")
+            elif action == 'reject':
+                return redirect('update_field', employee_id=employee.id, field_name=field_name)
+        return redirect('employee_verification_summary', employee_id=employee.id)
+
+    fields_to_verify = [
+        'ippisNumber', 'fileNumber', 'firstName', 'lastName', 'middleName',
+        'dateOfBirth', 'gender', 'maritalStatus', 'phoneNumber', 'emailAddress',
+        'residentialAddress', 'stateOfOrigin', 'lgaOfOrigin',
+        'dateOfFirstAppointment', 'dateOfPresentAppointment', 'dateOfConfirmation',
+        'cadre', 'currentGradeLevel', 'currentStep', 'department', 'stateOfPosting',
+        'presentAppointment', 'lastPromotionDate', 'retirementDate',
+    ]
+
+    field_statuses = {}
+    for field in fields_to_verify:
+        discrepancy = discrepancies.filter(discrepancyType=field.upper()).first()
+        value = getattr(employee, field)
+        
+        # Handle foreign key relationships
+        if field in ['stateOfOrigin', 'lgaOfOrigin', 'currentGradeLevel', 'department', 'stateOfPosting', 'station']:
+            value = value.name if value else None
+
+        field_statuses[field] = {
+            'value': value,
+            'is_verified': getattr(employee, f"{field}_verified", False),
+            'discrepancy': discrepancy,
+            'audit_value': discrepancy.auditValue if discrepancy else None
+        }
+
+    context = {
+        'employee': employee,
+        'field_statuses': field_statuses,
+    }
+    return render(request, 'hr_app/employee_verification_summary.html', context)
+
+
+@login_required
+@user_passes_test(lambda u: is_authorized(u, ['DRUID_VIEWER', 'SUPER_ADMIN', 'DIRECTOR_GENERAL', 'HR_ADMIN', 'VERIFICATION_OFFICER']))
+def update_field(request, employee_id, field_name):
+    employee = get_object_or_404(Employee, id=employee_id)
+    discrepancy = Discrepancy.objects.filter(employee=employee, discrepancyType=field_name.upper()).first()
+
+    dropdown_fields = ['gender', 'maritalStatus', 'stateOfOrigin', 'lgaOfOrigin', 'cadre', 'currentGradeLevel', 'department', 'stateOfPosting', 'station', 'division']
+    
+    if request.method == 'POST':
+        field_value = request.POST.get(field_name)
+        setattr(employee, field_name, field_value)
+        employee.save()
+
+        if discrepancy:
+            discrepancy_form = DiscrepancyResolutionForm(request.POST, instance=discrepancy)
+            if discrepancy_form.is_valid():
+                resolved_discrepancy = discrepancy_form.save(commit=False)
+                resolved_discrepancy.isResolved = True
+                resolved_discrepancy.resolvedBy = request.user
+                resolved_discrepancy.resolutionDate = timezone.now()
+                resolved_discrepancy.save()
+
+        setattr(employee, f"{field_name}_verified", True)
+        employee.save()
+
+        messages.success(request, f"{field_name.replace('_', ' ').title()} has been updated and verified.")
+        return redirect('employee_verification_summary', employee_id=employee.id)
+    else:
+        initial_data = {field_name: getattr(employee, field_name)}
+        field_form = FieldUpdateForm(initial=initial_data)
+        discrepancy_form = DiscrepancyResolutionForm(instance=discrepancy) if discrepancy else None
+
+        context = {
+            'employee': employee,
+            'field_form': field_form,
+            'discrepancy_form': discrepancy_form,
+            'field_name': field_name,
+            'dropdown_fields': dropdown_fields,
+        }
+
+        if field_name in dropdown_fields:
+            if field_name in ['stateOfOrigin', 'stateOfPosting']:
+                context['states'] = State.objects.all()
+            elif field_name in ['lgaOfOrigin', 'station']:
+                context['lgas'] = LGA.objects.filter(state=getattr(employee, 'stateOfOrigin' if field_name == 'lgaOfOrigin' else 'stateOfPosting'))
+            elif field_name == 'department':
+                context['departments'] = Department.objects.all()
+            elif field_name == 'division':
+                context['divisions'] = Division.objects.filter(department=employee.department)
+            elif field_name == 'currentGradeLevel':
+                context['dropdown_choices'] = [(gl.id, gl.name) for gl in GradeLevel.objects.all()]
+            elif field_name in ['gender', 'maritalStatus', 'cadre']:
+                context['dropdown_choices'] = getattr(Employee, f'{field_name.upper()}_CHOICES')
+
+    return render(request, 'hr_app/update_field.html', context)
+
+                                
+                                
+@login_required
+@user_passes_test(lambda u: is_authorized(u, ['DRUID_VIEWER', 'SUPER_ADMIN', 'DIRECTOR_GENERAL', 'HR_ADMIN', 'VERIFICATION_OFFICER']))
+def complete_verification(request, employee_id):
+    employee = get_object_or_404(Employee, id=employee_id)
+    unverified_fields = [field for field in employee._meta.fields if field.name.endswith('_verified') and not getattr(employee, field.name)]
+
+    if unverified_fields:
+        messages.error(request, "All fields must be verified before completing the verification process.")
+        return redirect('employee_verification_summary', employee_id=employee.id)
+
+    if request.method == 'POST':
+        form = FinalVerificationForm(request.POST)
+        if form.is_valid():
+            employee.isVerified = True
+            employee.verifiedBy = request.user
+            employee.verificationDate = timezone.now()
+            employee.verificationNotes = form.cleaned_data['verification_notes']
+            employee.save()
+            messages.success(request, f"Verification completed for {employee.firstName} {employee.lastName}.")
+            return redirect('search_verify_employees')
+    else:
+        form = FinalVerificationForm()
+
+    context = {
+        'employee': employee,
+        'form': form,
+    }
+    return render(request, 'hr_app/complete_verification.html', context)
 
 @login_required
 @user_passes_test(lambda u: is_authorized(u, ['DRUID_VIEWER', 'SUPER_ADMIN', 'DIRECTOR_GENERAL', 'HR_ADMIN', 'VERIFICATION_OFFICER']))
@@ -1766,6 +1823,44 @@ def custom_report_builder(request):
     return render(request, 'hr_app/custom_report_builder.html', {'form': form})
 
 @login_required
+def view_report(request, report_id):
+    report = get_object_or_404(CustomReport, id=report_id)
+    model = apps.get_model('hr_app', report.model_name)
+    
+    queryset = model.objects.all()
+    if report.filters:
+        queryset = queryset.filter(**report.filters)
+    
+    if report.order_by:
+        queryset = queryset.order_by(report.order_by)
+    
+    items_per_page = int(request.GET.get('items_per_page', report.items_per_page))
+    paginator = Paginator(queryset, items_per_page)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    data = []
+    for item in page_obj:
+        row = {}
+        for field in report.fields:
+            if '__' in field:
+                related_obj = item
+                for related_field in field.split('__'):
+                    related_obj = getattr(related_obj, related_field)
+                row[field] = str(related_obj)
+            else:
+                row[field] = str(getattr(item, field))
+        data.append(row)
+    
+    context = {
+        'report': report,
+        'page_obj': page_obj,
+        'data': data,
+        'items_per_page': items_per_page,
+    }
+    return render(request, 'hr_app/view_report.html', context)
+
+@login_required
 def get_model_fields(request):
     model_name = request.GET.get('model_name')
     form = CustomReportForm(data={'model_name': model_name})
@@ -1849,6 +1944,7 @@ def add_report_filter(request, report_id):
     return render(request, 'hr_app/add_report_filter.html', {'form': form, 'report': report})
 
 
+
 @login_required
 def export_report_csv(request, report_id):
     report = get_object_or_404(CustomReport, id=report_id)
@@ -1858,35 +1954,30 @@ def export_report_csv(request, report_id):
     if report.filters:
         queryset = queryset.filter(**report.filters)
     
-    # Separate direct fields and related fields
-    direct_fields = []
-    related_fields = []
-    for field in report.fields:
-        if '__' in field:
-            related_fields.append(field)
-        else:
-            direct_fields.append(field)
+    if report.order_by:
+        queryset = queryset.order_by(report.order_by)
     
-    # Prepare response
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = f'attachment; filename="{report.name}.csv"'
     
     writer = csv.writer(response)
+    writer.writerow(report.fields)
     
-    # Write headers
-    headers = direct_fields + related_fields
-    writer.writerow(headers)
-    
-    # Write data
     for item in queryset:
         row = []
-        for field in direct_fields:
-            row.append(getattr(item, field))
-        for field in related_fields:
-            row.append(getattr(item, field))
+        for field in report.fields:
+            if '__' in field:
+                related_obj = item
+                for related_field in field.split('__'):
+                    related_obj = getattr(related_obj, related_field)
+                row.append(str(related_obj))
+            else:
+                row.append(str(getattr(item, field)))
         writer.writerow(row)
     
     return response
+
+
 
 
 
@@ -2048,3 +2139,475 @@ def get_system_health():
 def get_duplicate_file_numbers():
     return StaffAuditEmployee.objects.values('fileNumber').annotate(
         count=Count('fileNumber')).filter(count__gt=1).count()
+
+# New search processes
+import tempfile
+
+@login_required
+@user_passes_test(lambda u: u.userprofile.role in ['DRUID_VIEWER','HR_ADMIN','IT_ADMIN','VERIFICATION_OFFICER', 'TEAM_LEAD'])
+def search_staff(request):
+    user_profile = request.user.userprofile
+    allowed_states = user_profile.allowedStates.all()
+    allowed_departments = user_profile.allowedDepartments.all()
+    allowed_zones = user_profile.allowedZones.all()
+
+    if request.method == 'POST':
+        form = StaffSearchForm(request.POST)
+        if form.is_valid():
+            search_term = form.cleaned_data['search_term']
+            staff_audit = StaffAuditEmployee.objects.filter(
+                Q(ippisNumber__iexact=search_term) |
+                Q(fileNumber__iexact=search_term)
+            ).filter(
+                Q(stateOfPosting__in=allowed_states) |
+                Q(department__in=allowed_departments) |
+                Q(stateOfPosting__zone__in=allowed_zones)
+            ).first()
+
+            if staff_audit:
+                return redirect('view_staff_audit', ippis_number=staff_audit.ippisNumber)
+            else:
+                messages.error(request, "No matching staff record found.")
+    else:
+        form = StaffSearchForm()
+    
+    return render(request, 'hr_app/search_staff.html', {'form': form})
+
+@login_required
+@user_passes_test(lambda u: u.userprofile.role in ['DRUID_VIEWER','HR_ADMIN','IT_ADMIN','VERIFICATION_OFFICER', 'TEAM_LEAD'])
+def view_staff_audit(request, ippis_number):
+    staff_audit = get_object_or_404(StaffAuditEmployee, ippisNumber=ippis_number)
+    
+    # Create a list of fields to display
+    fields_to_display = [
+        'ippisNumber', 'fileNumber', 'surname', 'otherNames',
+        'dateOfBirth', 'sex', 'maritalStatus', 'phoneNumber',
+        'residentialAddress', 'stateOfOrigin', 'lgaOfOrigin', 'residentialAddress',
+        'dateOfFirstAppointment', 'dateOfPresentAppointment', 'dateOfConfirmation',
+        'gradeLevel', 'step', 'department', 'stateOfPosting', 'station', 
+        'nok1_name','nok1_relationship','nok1_phoneNumber','nok1_address',
+        'nok2_name','nok2_relationship','nok2_phoneNumber','nok2_address'
+    ]
+    
+    # Create a list of tuples containing (field_name, field_value)
+    staff_audit_data = [(field, getattr(staff_audit, field)) for field in fields_to_display]
+    
+    context = {
+        'staff_audit': staff_audit,
+        'staff_audit_data': staff_audit_data,
+    }
+    return render(request, 'hr_app/view_staff_audit.html', context)
+
+
+@login_required
+@user_passes_test(lambda u: u.userprofile.role in ['DRUID_VIEWER','HR_ADMIN','IT_ADMIN','VERIFICATION_OFFICER', 'TEAM_LEAD'])
+def start_verification(request, ippis_number):
+    staff_audit = get_object_or_404(StaffAuditEmployee, ippisNumber=ippis_number)
+    
+    # Check if an Employee record already exists
+    existing_employee = Employee.objects.filter(ippisNumber=ippis_number).first()
+    if existing_employee:
+        # If an Employee record exists, redirect to the employee data page
+        messages.info(request, f"Employee {ippis_number} has already been verified. Redirecting to employee data.")
+        return redirect('view_employee_data', ippis_number=ippis_number)
+
+    if request.method == 'POST':
+        form = EmployeeVerificationForm(request.POST, request.FILES)
+        if form.is_valid():
+            # Create a new Employee instance but don't save it to the database yet
+            employee = Employee(ippisNumber=ippis_number)
+            
+            # Transfer data from staff audit to employee
+            for field in staff_audit._meta.fields:
+                if hasattr(employee, field.name) and field.name != 'id':
+                    setattr(employee, field.name, getattr(staff_audit, field.name))
+            
+            # Set specific fields
+            employee.lastName = staff_audit.surname
+            employee.firstName = staff_audit.otherNames.split()[0] if staff_audit.otherNames else ''
+            employee.middleName = ' '.join(staff_audit.otherNames.split()[1:]) if staff_audit.otherNames and len(staff_audit.otherNames.split()) > 1 else ''
+            
+            # Update employee with form data
+            for field, value in form.cleaned_data.items():
+                setattr(employee, field, value)
+            
+            # Set verification fields
+            employee.isVerified = True
+            employee.verifiedBy = request.user
+            employee.verificationDate = timezone.now()
+            
+            # Save the employee record
+            employee.save()
+            
+            messages.success(request, f"Verification completed for employee {ippis_number}.")
+            return redirect('view_employee_data', ippis_number=ippis_number)
+    else:
+        # Initialize the form with data from StaffAuditEmployee
+        initial_data = {
+            'ippisNumber': staff_audit.ippisNumber,
+            'fileNumber': staff_audit.fileNumber,
+            'lastName': staff_audit.surname,
+            'firstName': staff_audit.otherNames.split()[0] if staff_audit.otherNames else '',
+            'middleName': ' '.join(staff_audit.otherNames.split()[1:]) if staff_audit.otherNames and len(staff_audit.otherNames.split()) > 1 else '',
+            'dateOfBirth': staff_audit.dateOfBirth,
+            'gender': staff_audit.sex,  # Assuming 'sex' in StaffAuditEmployee corresponds to 'gender' in Employee
+            'maritalStatus': staff_audit.maritalStatus,
+            'phoneNumber': staff_audit.phoneNumber,
+            'emailAddress': staff_audit.emailAddress,
+            'residentialAddress': staff_audit.residentialAddress,
+            'stateOfOrigin': staff_audit.stateOfOrigin,
+            'lgaOfOrigin': staff_audit.lgaOfOrigin,
+            'dateOfFirstAppointment': staff_audit.dateOfFirstAppointment,
+            'dateOfPresentAppointment': staff_audit.dateOfPresentAppointment,
+            'dateOfConfirmation': staff_audit.dateOfConfirmation,
+            'currentGradeLevel': staff_audit.gradeLevel,
+            'currentStep': staff_audit.step,
+            'department': staff_audit.department,
+            'stateOfPosting': staff_audit.stateOfPosting,
+            'station': staff_audit.station,
+            'cadre': staff_audit.cadre,
+            'bank': staff_audit.bank,
+            'accountNumber': staff_audit.accountNumber,
+            'accountType': staff_audit.accountType,
+            'pfa': staff_audit.pfa,
+            'pfaNumber': staff_audit.pfaNumber,
+            'isOnLeave': staff_audit.isOnLeave,
+            'nok1_name': staff_audit.nok1_name,
+            'nok1_relationship': staff_audit.nok1_relationship,
+            'nok1_address': staff_audit.nok1_address,
+            'nok1_phoneNumber': staff_audit.nok1_phoneNumber,
+            'nok2_name': staff_audit.nok2_name,
+            'nok2_relationship': staff_audit.nok2_relationship,
+            'nok2_address': staff_audit.nok2_address,
+            'nok2_phoneNumber': staff_audit.nok2_phoneNumber,
+        }
+        
+        form = EmployeeVerificationForm(initial=initial_data)
+
+    return render(request, 'hr_app/start_verification.html', {'form': form, 'staff_audit': staff_audit})
+
+
+@login_required
+@user_passes_test(lambda u: u.userprofile.role in ['DRUID_VIEWER','HR_ADMIN','IT_ADMIN','VERIFICATION_OFFICER', 'TEAM_LEAD'])
+
+def complete_verification(request, ippis_number):
+    employee = get_object_or_404(Employee, ippisNumber=ippis_number)
+
+    if request.method == 'POST':
+        form = CompleteVerificationForm(request.POST)
+        if form.is_valid():
+            # Process the captured image
+            image_data = form.cleaned_data['captured_image']
+            if image_data:
+                format, imgstr = image_data.split(';base64,')
+                image = Image.open(BytesIO(base64.b64decode(imgstr)))
+                
+                # Resize and compress image
+                image.thumbnail((300, 300))
+                output = BytesIO()
+                image.save(output, format='JPEG', quality=85)
+                output.seek(0)
+                
+                # Check if size is less than 50KB, if not, reduce quality
+                while output.getbuffer().nbytes > 50 * 1024:
+                    quality -= 5
+                    output = BytesIO()
+                    image.save(output, format='JPEG', quality=quality)
+                    output.seek(0)
+                
+                # Create a temporary file-like object
+                temp_file = tempfile.SpooledTemporaryFile()
+                temp_file.write(output.getvalue())
+                temp_file.seek(0)  # Reset the file pointer to the beginning
+
+                # Now you can save the temporary file to the database
+                employee.passport.save(f'{ippis_number}_passport.jpg', temp_file)
+                temp_file.close()  # Close the temporary file
+
+            employee.verificationNotes = form.cleaned_data['verification_notes']
+            employee.isVerified = True
+            employee.verifiedBy = request.user
+            employee.verificationDate = timezone.now()
+            employee.save()
+
+            messages.success(request, f"Verification completed for employee {ippis_number}.")
+            return redirect('search_staff')
+    else:
+        form = CompleteVerificationForm()
+
+    return render(request, 'hr_app/complete_verification.html', {'form': form, 'employee': employee})
+
+@login_required
+@user_passes_test(lambda u: u.userprofile.role in ['DRUID_VIEWER','HR_ADMIN','IT_ADMIN','VERIFICATION_OFFICER', 'TEAM_LEAD'])
+def view_employee_data(request, ippis_number):
+    employee = get_object_or_404(Employee, ippisNumber=ippis_number)
+    
+    # Create a list of fields to display
+    fields_to_display = [
+        'ippisNumber', 'fileNumber', 'lastName', 'firstName', 'middleName',
+        'dateOfBirth', 'gender', 'maritalStatus', 'phoneNumber',
+        'emailAddress', 'residentialAddress', 'stateOfOrigin', 'lgaOfOrigin',
+        'dateOfFirstAppointment', 'dateOfPresentAppointment', 'dateOfConfirmation',
+        'currentGradeLevel', 'currentStep', 'department', 'stateOfPosting', 'station', 
+        'bank', 'accountNumber', 'pfa', 'pfaNumber'
+    ]
+    
+    # Create a list of tuples containing (field_name, field_value)
+    employee_data = [(field, getattr(employee, field)) for field in fields_to_display]
+    
+    context = {
+        'employee': employee,
+        'employee_data': employee_data,
+    }
+    return render(request, 'hr_app/view_employee_data.html', context)
+
+
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import State, LGA, Department, Division, OfficialAppointment
+
+@login_required
+def get_lgas(request):
+    state_code = request.GET.get('state_code')
+    if state_code:
+        lgas = LGA.objects.filter(state__code=state_code).values('code', 'name')
+    else:
+        lgas = []
+    return JsonResponse(list(lgas), safe=False)
+
+@login_required
+def get_official_appointments(request):
+    department_code = request.GET.get('department_code')
+    grade_level = request.GET.get('grade_level')
+    cadre = request.GET.get('cadre')
+    
+    if department_code:
+        appointments = OfficialAppointment.objects.filter(department__code=department_code)
+        
+        if grade_level:
+            appointments = appointments.filter(gradeLevel__level=grade_level)
+        
+        if cadre:
+            appointments = appointments.filter(cadre=cadre)
+        
+        appointments = appointments.order_by('gradeLevel__level', 'name').annotate(
+            grade_level=F('gradeLevel__level')
+        ).values('code', 'name', 'grade_level', 'cadre')
+    else:
+        appointments = []
+    
+    return JsonResponse(list(appointments), safe=False)
+
+@login_required
+def get_divisions(request):
+    department_code = request.GET.get('department_code')
+    if department_code:
+        divisions = Division.objects.filter(department__code=department_code).values('code', 'name')
+    else:
+        divisions = []
+    return JsonResponse(list(divisions), safe=False)
+
+
+import csv
+from io import TextIOWrapper
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.db import transaction
+from .models import Zone, State, LGA, Department, Division, GradeLevel, OfficialAppointment, Bank, PFA, StaffAuditEmployee
+import chardet
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def data_upload(request):
+    model_choices = [
+        ('Zone', 'Zones'),
+        ('State', 'States'),
+        ('LGA', 'Local Government Areas'),
+        ('Department', 'Departments'),
+        ('Division', 'Divisions'),
+        ('GradeLevel', 'Grade Levels'),
+        ('OfficialAppointment', 'Official Appointments'),
+        ('Bank', 'Banks'),
+        ('PFA', 'PFAs'),
+        ('StaffAuditEmployee', 'Staff Audit Employees'),
+    ]
+
+    if request.method == 'POST':
+        file = request.FILES.get('file')
+        model_name = request.POST.get('model')
+        
+        if not file:
+            return JsonResponse({'error': 'No file was uploaded.'}, status=400)
+        
+        if not file.name.endswith('.csv'):
+            return JsonResponse({'error': 'File must be a CSV.'}, status=400)
+
+        try:
+            # Detect file encoding
+            raw_data = file.read()
+            result = chardet.detect(raw_data)
+            file_encoding = result['encoding']
+
+            # Decode the file content
+            file_content = raw_data.decode(file_encoding)
+            
+            # Get CSV preview
+            csv_preview = get_csv_preview(file_content)
+
+            if model_name == 'StaffAuditEmployee':
+                result = process_staff_audit_employee(file_content, file_encoding)
+            else:
+                result = process_general_upload(file_content, file_encoding, model_name)
+            
+            return JsonResponse({
+                'message': f'{result["created"]} {model_name} records created. {result["updated"]} records updated. {result["errors"]} errors encountered.',
+                'created': result['created'],
+                'updated': result['updated'],
+                'errors': result['errors'],
+                'preview': csv_preview
+            })
+        except Exception as e:
+            return JsonResponse({'error': f'Error uploading data: {str(e)}'}, status=500)
+    
+    return render(request, 'hr_app/data_upload.html', {'model_choices': model_choices})
+
+def get_csv_preview(file_content, num_rows=5):
+    csv_reader = csv.reader(file_content.splitlines())
+    headers = next(csv_reader)
+    preview_rows = []
+    for i, row in enumerate(csv_reader):
+        if i < num_rows:
+            preview_rows.append(row)
+        else:
+            break
+    return {'headers': headers, 'rows': preview_rows}
+
+
+def convert_date(date_string):
+    if not date_string:
+        return None
+    try:
+        return datetime.strptime(date_string, "%d/%m/%Y").strftime("%Y-%m-%d")
+    except ValueError:
+        # If conversion fails, return None or the original string
+        return None
+
+@transaction.atomic
+def process_staff_audit_employee(file_content, file_encoding):
+    reader = csv.DictReader(file_content.splitlines())
+    created, updated, errors = 0, 0, 0
+
+    for row in reader:
+        try:
+            # Helper function to safely get values from the row
+            def get_value(key, default=None):
+                return row.get(key, default)
+
+            # Look up related objects by their codes, with error handling
+            state_of_origin = State.objects.get(code=get_value('stateOfOrigin')) if get_value('stateOfOrigin') else None
+            lga_of_origin = LGA.objects.get(code=get_value('lgaOfOrigin')) if get_value('lgaOfOrigin') else None
+            grade_level = GradeLevel.objects.get(level=int(get_value('gradeLevel'))) if get_value('gradeLevel') else None
+            department = Department.objects.get(code=get_value('department')) if get_value('department') else None
+            state_of_posting = State.objects.get(code=get_value('stateOfPosting')) if get_value('stateOfPosting') else None
+            station = LGA.objects.get(code=get_value('station')) if get_value('station') else None
+            bank = Bank.objects.get(code=get_value('bank')) if get_value('bank') else None
+            pfa = PFA.objects.get(code=get_value('pfa')) if get_value('pfa') else None
+
+            defaults = {
+                'fileNumber': get_value('fileNumber'),
+                'title': get_value('title'),
+                'surname': get_value('surname'),
+                'otherNames': get_value('otherNames'),
+                'dateOfBirth': convert_date(get_value('dateOfBirth')),
+                'sex': get_value('sex'),
+                'stateOfOrigin': state_of_origin,
+                'lgaOfOrigin': lga_of_origin,
+                'maritalStatus': get_value('maritalStatus'),
+                'emailAddress': get_value('emailAddress'),
+                'phoneNumber': get_value('phoneNumber'),
+                'gradeLevel': grade_level,
+                'step': int(get_value('step')) if get_value('step') else None,
+                'cadre': get_value('cadre'),
+                'dateOfFirstAppointment': convert_date(get_value('dateOfFirstAppointment')),
+                'dateOfPresentAppointment': convert_date(get_value('dateOfPresentAppointment')),
+                'dateOfConfirmation': convert_date(get_value('dateOfConfirmation')),
+                'department': department,
+                'stateOfPosting': state_of_posting,
+                'station': station,
+                'isOnLeave': get_value('isOnLeave', '').lower() == 'true',
+                'bank': bank,
+                'accountNumber': get_value('accountNumber'),
+                'accountType': get_value('accountType'),
+                'pfa': pfa,
+                'pfaNumber': get_value('pfaNumber'),
+                'branch': get_value('branch'),
+                'nok1_name': get_value('nok1_name'),
+                'nok1_relationship': get_value('nok1_relationship'),
+                'nok1_address': get_value('nok1_address'),
+                'nok1_phoneNumber': get_value('nok1_phoneNumber'),
+                'nok2_name': get_value('nok2_name'),
+                'nok2_relationship': get_value('nok2_relationship'),
+                'nok2_address': get_value('nok2_address'),
+                'nok2_phoneNumber': get_value('nok2_phoneNumber'),
+            }
+
+            # Remove None values to avoid overwriting existing data with None
+            defaults = {k: v for k, v in defaults.items() if v is not None}
+
+            employee, is_created = StaffAuditEmployee.objects.update_or_create(
+                ippisNumber=get_value('ippisNumber'),
+                defaults=defaults
+            )
+
+            if is_created:
+                created += 1
+            else:
+                updated += 1
+
+        except Exception as e:
+            errors += 1
+            print(f"Error processing row: {row}. Error: {str(e)}")
+
+    return {"created": created, "updated": updated, "errors": errors}
+
+
+
+@transaction.atomic
+def process_general_upload(file, model_name):
+    model = globals()[model_name]
+    csv_file = TextIOWrapper(file, encoding='utf-8')
+    reader = csv.DictReader(csv_file)
+    created, updated, errors = 0, 0, 0
+
+    for row in reader:
+        try:
+            # For models with foreign keys, we need to look up the related objects
+            if model_name == 'State':
+                zone = Zone.objects.get(code=row['zone'])
+                row['zone'] = zone
+            elif model_name == 'LGA':
+                state = State.objects.get(code=row['state'])
+                row['state'] = state
+            elif model_name == 'Division':
+                department = Department.objects.get(code=row['department'])
+                row['department'] = department
+            elif model_name == 'OfficialAppointment':
+                grade_level = GradeLevel.objects.get(level=int(row['gradeLevel']))
+                department = Department.objects.get(code=row['department'])
+                row['gradeLevel'] = grade_level
+                row['department'] = department
+
+            obj, created = model.objects.update_or_create(
+                **{model._meta.pk.name: row[model._meta.pk.name]},
+                defaults=row
+            )
+            if created:
+                created += 1
+            else:
+                updated += 1
+        except Exception as e:
+            errors += 1
+            print(f"Error processing row: {row}. Error: {str(e)}")
+
+    return {"created": created, "updated": updated, "errors": errors}

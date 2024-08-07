@@ -13,10 +13,13 @@ class UserProfile(models.Model):
     USER_ROLES = [
         ('DRUID_VIEWER', 'Druid Viewer'),
         ('SUPER_ADMIN', 'Super Admin'),
-        ('DIRECTOR_GENERAL', 'Director General'),
-        ('IT_ADMIN', 'IT Admin'),
         ('HR_ADMIN', 'HR Admin'),
+        ('DIRECTOR_GENERAL', 'Director General'),
+        ('DIRECTOR', 'Director'),
+        ('HFC', 'Honourable Federal Commissioner'),
+        ('IT_ADMIN', 'IT Admin'),
         ('MONITORING_OFFICER', 'Monitoring Officer'),
+        ('TEAM_LEAD', 'Teamlead'),
         ('VERIFICATION_OFFICER', 'Verification Officer'),
         ('HELPDESK', 'Helpdesk'),
         ('HR_DATA_SCREENING', 'HR Data Screening'),
@@ -25,15 +28,22 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     role = models.CharField(max_length=20, choices=USER_ROLES)
     phoneNumber = models.CharField(max_length=11, blank=True)
-    ippisNumber = models.CharField(max_length=8, unique=True, null=True, blank=True)
-    department = models.ForeignKey('Department', on_delete=models.SET_NULL, null=True, blank=True)
-    stateOfPosting = models.ForeignKey('State', on_delete=models.SET_NULL, null=True, blank=True, related_name='posting_users')
-    allowedStates = models.ManyToManyField('State', blank=True, related_name='allowed_users')
-    allowedZones = models.ManyToManyField('Zone', blank=True, related_name='allowed_users')
-    allowedDepartments = models.ManyToManyField('Department', blank=True, related_name='allowed_users')
+    ippisNumber = models.CharField(
+        max_length=8, unique=True, null=True, blank=True)
+    department = models.ForeignKey(
+        'Department', on_delete=models.SET_NULL, null=True, blank=True)
+    stateOfPosting = models.ForeignKey(
+        'State', on_delete=models.SET_NULL, null=True, blank=True, related_name='posting_users')
+    allowedStates = models.ManyToManyField(
+        'State', blank=True, related_name='allowed_users')
+    allowedZones = models.ManyToManyField(
+        'Zone', blank=True, related_name='allowed_users')
+    allowedDepartments = models.ManyToManyField(
+        'Department', blank=True, related_name='allowed_users')
 
     def __str__(self):
         return f"{self.user.username}'s profile - {self.get_role_display()}"
+
 
 @receiver(post_save, sender=User)
 def create_or_update_user_profile(sender, instance, created, **kwargs):
@@ -125,6 +135,7 @@ class OfficialAppointment(models.Model):
         verbose_name = "Official Appointment"
         verbose_name_plural = "Official Appointments"
 
+
 class Bank(models.Model):
     name = models.CharField(max_length=100)
     code = models.CharField(max_length=3, unique=True)
@@ -176,24 +187,28 @@ class Discrepancy(models.Model):
     class Meta:
         verbose_name_plural = "Discrepancies"
 
+
 def getDifference(self):
-        if self.discrepancyType in ['DOB', 'DOF', 'DOP', 'DOC']:
-            try:
-                audit_date = datetime.strptime(self.auditValue, "%Y-%m-%d").date() if self.auditValue else None
-                employee_date = datetime.strptime(self.employeeValue, "%Y-%m-%d").date() if self.employeeValue else None
-                
-                if audit_date and employee_date:
-                    difference = abs((audit_date - employee_date).days)
-                    return f"{difference} days"
-                elif audit_date and not employee_date:
-                    return "Employee value missing"
-                elif employee_date and not audit_date:
-                    return "Audit value missing"
-                else:
-                    return "Both values missing"
-            except ValueError:
-                return "Invalid date format"
-        return "N/A"
+    if self.discrepancyType in ['DOB', 'DOF', 'DOP', 'DOC']:
+        try:
+            audit_date = datetime.strptime(
+                self.auditValue, "%Y-%m-%d").date() if self.auditValue else None
+            employee_date = datetime.strptime(
+                self.employeeValue, "%Y-%m-%d").date() if self.employeeValue else None
+
+            if audit_date and employee_date:
+                difference = abs((audit_date - employee_date).days)
+                return f"{difference} days"
+            elif audit_date and not employee_date:
+                return "Employee value missing"
+            elif employee_date and not audit_date:
+                return "Audit value missing"
+            else:
+                return "Both values missing"
+        except ValueError:
+            return "Invalid date format"
+    return "N/A"
+
 
 class StaffAuditEmployee(models.Model):
     ippisNumber = models.CharField(max_length=8, null=True, blank=True)
@@ -217,6 +232,7 @@ class StaffAuditEmployee(models.Model):
     maritalStatus = models.CharField(
         max_length=1, choices=MARITAL_CHOICES, null=True, blank=True)
     phoneNumber = models.CharField(max_length=11, null=True, blank=True)
+    emailAddress = models.EmailField()
 
     # Employment Details
     gradeLevel = models.ForeignKey(
@@ -235,9 +251,11 @@ class StaffAuditEmployee(models.Model):
     station = models.ForeignKey(LGA, on_delete=models.CASCADE, null=True, blank=True,
                                 related_name='station')
     isOnLeave = models.BooleanField(default=False)
-
+    residentialAddress = models.CharField(
+        max_length=100, null=True, blank=True)
     # Fnancials
-    bank = models.ForeignKey(Bank, on_delete=models.CASCADE, null=True, blank=True)
+    bank = models.ForeignKey(
+        Bank, on_delete=models.CASCADE, null=True, blank=True)
     accountNumber = models.CharField(max_length=10, null=True, blank=True)
     ACCOUNT_TYPES = [
         ('S', 'Savings'),
@@ -245,19 +263,32 @@ class StaffAuditEmployee(models.Model):
     ]
     accountType = models.CharField(
         max_length=1, choices=ACCOUNT_TYPES, null=True, blank=True)
-    pfa = models.ForeignKey(PFA, on_delete=models.CASCADE, null=True, blank=True)
+    pfa = models.ForeignKey(
+        PFA, on_delete=models.CASCADE, null=True, blank=True)
     pfaNumber = models.CharField(max_length=10, null=True, blank=True)
     branch = models.CharField(max_length=50, null=True, blank=True)
 
     # Next of Kin
-    nok1_name = models.CharField(max_length=50, null=True, blank=True)
-    nok1_relationship = models.CharField(max_length=50, null=True, blank=True)
-    nok1_address = models.CharField(max_length=100, null=True, blank=True)
-    nok1_phoneNumber = models.CharField(max_length=11, null=True, blank=True)
-    nok2_name = models.CharField(max_length=50, null=True, blank=True)
-    nok2_relationship = models.CharField(max_length=50, null=True, blank=True)
-    nok2_address = models.CharField(max_length=100, null=True, blank=True)
-    nok2_phoneNumber = models.CharField(max_length=11, null=True, blank=True)
+    nok1_name = models.CharField(
+        max_length=50, null=True, blank=True, verbose_name="Next of Kin 1 Name")
+    nok1_relationship = models.CharField(
+        max_length=10, choices=[('SPOUSE', 'Spouse'), ('CHILD', 'Child'), ('PARENT', 'Parent'),
+                                ('SIBLING', 'Sibling'), ('OTHER', 'Other')],
+        null=True, blank=True, verbose_name="Next of Kin 1 Relationship")
+    nok1_address = models.CharField(
+        max_length=100, null=True, blank=True, verbose_name="Next of Kin 1 Address")
+    nok1_phoneNumber = models.CharField(
+        max_length=11, null=True, blank=True, verbose_name="Next of Kin 1 Phone Number")
+    nok2_name = models.CharField(
+        max_length=50, null=True, blank=True, verbose_name='Next of Kin 2 Name')
+    nok2_relationship = models.CharField(
+        max_length=10, choices=[('SPOUSE', 'Spouse'), ('CHILD', 'Child'), ('PARENT', 'Parent'),
+                                ('SIBLING', 'Sibling'), ('OTHER', 'Other')],
+        null=True, blank=True, verbose_name='Next of Kin 2 Relationship')
+    nok2_address = models.CharField(
+        max_length=100, null=True, blank=True, verbose_name='Next of Kin 2 Address')
+    nok2_phoneNumber = models.CharField(
+        max_length=11, null=True, blank=True, verbose_name='Next of Kin 2 Phone Number')
 
     # Control Fieldss
     isProcessed = models.BooleanField(default=False)
@@ -277,23 +308,6 @@ class StaffAuditEmployee(models.Model):
                     {'lgaOfOrigin': "LGA must be in the same state as stateOfPosting."})
 
         # Ensure grade level, cadre, and division combination exists in OfficialAppointment
-        if self.gradeLevel and self.cadre and self.department:
-            if not OfficialAppointment.objects.filter(
-                gradeLevel=self.gradeLevel,
-                cadre=self.cadre,
-                department=self.department
-            ).exists():
-                raise ValidationError(
-                    {
-                        'gradeLevel': "This grade level, cadre, and department combination is not allowed."
-                    }
-                )
-
-        # Ensure the division is in the same department
-        if self.department and self.station:
-            if self.station.state != self.stateOfPosting:
-                raise ValidationError(
-                    {'station': "Station must be in the same state as stateOfPosting."})
 
     def compareWithEmployee(self, employee):
         discrepancies = []
@@ -318,6 +332,7 @@ class StaffAuditEmployee(models.Model):
                 })
 
         return discrepancies
+
 
 class StaffAuditEducation(models.Model):
     staff = models.ForeignKey(StaffAuditEmployee, on_delete=models.CASCADE)
@@ -385,8 +400,8 @@ class Employee(models.Model):
         max_length=15, blank=True, verbose_name="Phone Number")
     emailAddress = models.EmailField(
         unique=True, blank=True, null=True, verbose_name="Email Address")
-    residentialAddress =models.CharField(max_length=150,
-        blank=True, verbose_name="Residential Address")
+    residentialAddress = models.CharField(max_length=150,
+                                          blank=True, verbose_name="Residential Address")
     stateOfOrigin = models.ForeignKey('State', on_delete=models.PROTECT,
                                       related_name='employeesOrigin', null=True, blank=True, verbose_name="State of Origin")
     lgaOfOrigin = models.ForeignKey('LGA', on_delete=models.PROTECT,
@@ -434,9 +449,10 @@ class Employee(models.Model):
     accountNumber = models.CharField(max_length=10, validators=[
                                      RegexValidator(r'^\d{10}$')], blank=True, null=True)
     pfa = models.ForeignKey(
-        'PFA', on_delete=models.PROTECT, null=True, blank=True)
+        'PFA', on_delete=models.PROTECT, null=True, blank=True, verbose_name='Pension Fund Administrator',
+        help_text='Please select the staff PFA')
     pfaNumber = models.CharField(max_length=12, blank=True, validators=[
-                                 RegexValidator(r'^\d{12}$')])
+                                 RegexValidator(r'^\d{12}$')], verbose_name="PFA PEN")
 
     # Spouse Details
     spouse_fullName = models.CharField(
@@ -447,6 +463,23 @@ class Employee(models.Model):
         max_length=100, blank=True, null=True, verbose_name="Spouse Employer Name")
     spouse_employmentPeriod = models.CharField(
         max_length=50, blank=True, null=True, verbose_name="Spouse Employment Period")
+
+    nok1_name = models.CharField(
+        max_length=50, null=True, blank=True, verbose_name="Next of Kin 1 Name")
+    nok1_relationship = models.CharField(
+        max_length=50, null=True, blank=True, verbose_name="Next of Kin 1 Relationship")
+    nok1_address = models.CharField(
+        max_length=100, null=True, blank=True, verbose_name="Next of Kin 1 Address")
+    nok1_phoneNumber = models.CharField(
+        max_length=11, null=True, blank=True, verbose_name="Next of Kin 1 Phone Number")
+    nok2_name = models.CharField(
+        max_length=50, null=True, blank=True, verbose_name='Next of Kin 2 Name')
+    nok2_relationship = models.CharField(
+        max_length=50, null=True, blank=True, verbose_name='Next of Kin 2 Relationship')
+    nok2_address = models.CharField(
+        max_length=100, null=True, blank=True, verbose_name='Next of Kin 2 Address')
+    nok2_phoneNumber = models.CharField(
+        max_length=11, null=True, blank=True, verbose_name='Next of Kin 2 Phone Number')
 
     # Metadata
     createdAt = models.DateTimeField(
@@ -467,7 +500,7 @@ class Employee(models.Model):
     isNextOfKinUpdated = models.BooleanField(default=False)
     isSpouseInfoUpdated = models.BooleanField(default=False)
     isPreviousEmploymentUpdated = models.BooleanField(default=False)
-    
+
     # Approval fields
     isPassportApproved = models.BooleanField(default=False)
     isPersonalInfoApproved = models.BooleanField(default=False)
@@ -478,6 +511,39 @@ class Employee(models.Model):
     isSpouseInfoApproved = models.BooleanField(default=False)
     isPreviousEmploymentApproved = models.BooleanField(default=False)
 
+    # IPPIS Verifications
+    surname_ippis = models.CharField(max_length=50, blank=True, null=True)
+    firstName_ippis = models.CharField(max_length=50, blank=True, null=True)
+    middleName_ippis = models.CharField(max_length=50, blank=True, null=True)
+    dateOfBirth_ippis = models.DateField(blank=True, null=True)
+    dateOfFirstAppointment_ippis = models.DateField(
+        blank=True, null=True, verbose_name='IPPIS Date of First Appointment')
+
+    # controls
+    ippisNumber_verified = models.BooleanField(default=False)
+    fileNumber_verified = models.BooleanField(default=False)
+    firstName_verified = models.BooleanField(default=False)
+    lastName_verified = models.BooleanField(default=False)
+    middleName_verified = models.BooleanField(default=False)
+    dateOfBirth_verified = models.BooleanField(default=False)
+    gender_verified = models.BooleanField(default=False)
+    maritalStatus_verified = models.BooleanField(default=False)
+    phoneNumber_verified = models.BooleanField(default=False)
+    emailAddress_verified = models.BooleanField(default=False)
+    residentialAddress_verified = models.BooleanField(default=False)
+    stateOfOrigin_verified = models.BooleanField(default=False)
+    lgaOfOrigin_verified = models.BooleanField(default=False)
+    dateOfFirstAppointment_verified = models.BooleanField(default=False)
+    dateOfPresentAppointment_verified = models.BooleanField(default=False)
+    dateOfConfirmation_verified = models.BooleanField(default=False)
+    cadre_verified = models.BooleanField(default=False)
+    currentGradeLevel_verified = models.BooleanField(default=False)
+    currentStep_verified = models.BooleanField(default=False)
+    department_verified = models.BooleanField(default=False)
+    stateOfPosting_verified = models.BooleanField(default=False)
+    presentAppointment_verified = models.BooleanField(default=False)
+    lastPromotionDate_verified = models.BooleanField(default=False)
+    retirementDate_verified = models.BooleanField(default=False)
 
     # Vreification contorls
     isVerified = models.BooleanField(default=False)
@@ -522,26 +588,6 @@ class Employee(models.Model):
         super().save(*args, **kwargs)
 
     def calculate_retirementDate(self):
-        if not all([self.dateOfFirstAppointment, self.dateOfBirth, self.currentGradeLevel]):
-            return None
-        today = date.today()
-        years_in_service = today.year - self.dateOfFirstAppointment.year
-        if self.currentGradeLevel.name == 'Director General':
-            retirementDate = self.dateOfBirth.replace(
-                year=today.year + 65 - (today.year - self.dateOfBirth.year))
-        elif years_in_service >= 35:
-            retirementDate = self.dateOfFirstAppointment + \
-                timedelta(days=365*35)
-        else:
-            age = today.year - self.dateOfBirth.year
-            if age >= 60:
-                retirementDate = self.dateOfBirth.replace(year=today.year)
-            else:
-                retirementDate = self.dateOfBirth.replace(
-                    year=today.year + 60 - age)
-        return retirementDate
-
-    def calculate_retirementDate(self):
         if not self.isEmploymentInfoUpdated or not self.isPersonalInfoUpdated:
             return None
 
@@ -552,13 +598,15 @@ class Employee(models.Model):
         years_in_service = today.year - self.dateOfFirstAppointment.year
 
         if years_in_service >= 35:
-            retirementDate = self.dateOfFirstAppointment + timedelta(days=365*35)
+            retirementDate = self.dateOfFirstAppointment + \
+                timedelta(days=365*35)
         else:
             age = today.year - self.dateOfBirth.year
             if age >= 60:
                 retirementDate = self.dateOfBirth.replace(year=today.year)
             else:
-                retirementDate = self.dateOfBirth.replace(year=today.year + 60 - age)
+                retirementDate = self.dateOfBirth.replace(
+                    year=today.year + 60 - age)
 
         return retirementDate
 
@@ -604,7 +652,8 @@ class EducationAndTraining(models.Model):
         max_length=2, choices=ACTIVITY_TYPE_CHOICES)
     title = models.CharField(
         max_length=50, help_text="Title of the degree, certification, or course, \n(e.g. Primary School Ceritificate, SSCE, WAEC, GCE, BSC, BA, B.Ed")
-    fieldOfStudy = models.CharField(max_length=50,blank=True, null=True, verbose_name='Field of Study')
+    fieldOfStudy = models.CharField(
+        max_length=50, blank=True, null=True, verbose_name='Field of Study')
     institution = models.CharField(max_length=255)
     level = models.CharField(
         max_length=4, choices=LEVEL_CHOICES, verbose_name="Level of Education")
@@ -658,7 +707,6 @@ class PreviousEmployment(models.Model):
         verbose_name_plural = "Previous Employments"
 
 
-
 class NextOfKin(models.Model):
     RELATIONSHIP_CHOICES = [
         ('SPOUSE', 'Spouse'),
@@ -676,7 +724,7 @@ class NextOfKin(models.Model):
     nok1_relationship = models.CharField(
         max_length=20, choices=RELATIONSHIP_CHOICES, blank=True, null=True, verbose_name="Next of Kin 1 Relationship")
     nok1_address = models.CharField(max_length=150,
-        blank=True, null=True, verbose_name="Next of Kin 1 Address")
+                                    blank=True, null=True, verbose_name="Next of Kin 1 Address")
     nok1_phoneNumber = models.CharField(max_length=11, validators=[RegexValidator(
         r'^(080|081|090|091|070)\d{8}$')], blank=True, null=True, verbose_name="Next of Kin 1 Phone Number")
 
@@ -685,8 +733,8 @@ class NextOfKin(models.Model):
         max_length=100, blank=True, null=True, verbose_name="Next of Kin 2 Full Name")
     nok2_relationship = models.CharField(
         max_length=20, choices=RELATIONSHIP_CHOICES, blank=True, null=True, verbose_name="Next of Kin 2 Relationship")
-    nok2_address =models.CharField(max_length=150,
-        blank=True, null=True, verbose_name="Next of Kin 2 Address")
+    nok2_address = models.CharField(max_length=150,
+                                    blank=True, null=True, verbose_name="Next of Kin 2 Address")
     nok2_phoneNumber = models.CharField(max_length=11, validators=[RegexValidator(
         r'^(080|081|090|091|070)\d{8}$')], blank=True, null=True, verbose_name="Next of Kin 2 Phone Number")
 
@@ -696,7 +744,7 @@ class NextOfKin(models.Model):
     class Meta:
         verbose_name = "Next of Kin"
         verbose_name_plural = "Next of Kin"
-        
+
 
 class Ticket(models.Model):
     PRIORITY_CHOICES = [
@@ -708,11 +756,14 @@ class Ticket(models.Model):
 
     subject = models.CharField(max_length=200)
     description = models.TextField()
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_tickets')
+    created_by = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='created_tickets')
     created_at = models.DateTimeField(auto_now_add=True)
-    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='MEDIUM')
+    priority = models.CharField(
+        max_length=10, choices=PRIORITY_CHOICES, default='MEDIUM')
     is_resolved = models.BooleanField(default=False)
-    resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='resolved_tickets')
+    resolved_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='resolved_tickets')
     resolved_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
@@ -720,8 +771,8 @@ class Ticket(models.Model):
 
     class Meta:
         ordering = ['-created_at']
-        
-        
+
+
 class CustomReport(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
@@ -732,9 +783,10 @@ class CustomReport(models.Model):
     fields = models.JSONField()
     filters = models.JSONField(default=dict)
     order_by = models.CharField(max_length=50, blank=True)
-    
+
     def __str__(self):
         return self.name
+
 
 class ReportSchedule(models.Model):
     report = models.ForeignKey(CustomReport, on_delete=models.CASCADE)
@@ -745,6 +797,6 @@ class ReportSchedule(models.Model):
     ])
     recipients = models.ManyToManyField(User, related_name='scheduled_reports')
     last_run = models.DateTimeField(null=True, blank=True)
-    
+
     def __str__(self):
         return f"{self.report.name} - {self.get_frequency_display()}"

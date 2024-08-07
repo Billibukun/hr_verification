@@ -557,9 +557,6 @@ class DiscrepancyResolveForm(forms.ModelForm):
         )
 
 
-from django import forms
-from .models import Employee, Discrepancy, Ticket
-
 class EmployeeSearchForm(forms.Form):
     query = forms.CharField(required=False, label='Search')
 
@@ -609,6 +606,7 @@ from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db.models.fields.reverse_related import ForeignObjectRel
 
+
 class CustomReportForm(forms.ModelForm):
     MODEL_CHOICES = [
         ('Employee', 'Employee'),
@@ -622,9 +620,13 @@ class CustomReportForm(forms.ModelForm):
     )
     fields = forms.MultipleChoiceField(
         required=False,
-        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-checkbox'})
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-multiselect mt-1 block w-full'})
     )
-    ordered_fields = forms.CharField(widget=forms.HiddenInput(), required=False)
+    order_by = forms.ChoiceField(
+        required=False,
+        choices=[('', '---------')],
+        widget=forms.Select(attrs={'class': 'form-select block w-full mt-1'})
+    )
     items_per_page = forms.ChoiceField(
         choices=[(10, '10'), (25, '25'), (50, '50'), (100, '100')], 
         initial=25,
@@ -637,20 +639,19 @@ class CustomReportForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-input block w-full mt-1'}),
             'description': forms.Textarea(attrs={'class': 'form-textarea block w-full mt-1', 'rows': 3}),
-            'order_by': forms.Select(attrs={'class': 'form-select block w-full mt-1'}),
         }
+        
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['fields'].choices = []
-        self.fields['order_by'].choices = [('', '---------')]
         
         if self.is_bound and 'model_name' in self.data:
             try:
                 model_name = self.data.get('model_name')
                 self.fields['fields'].choices = self.get_model_fields(model_name)
                 self.fields['order_by'].choices += self.get_model_fields(model_name)
-            except (KeyError, ValidationError):
+            except (KeyError, ValueError):
                 pass
         elif self.instance.pk:
             self.fields['fields'].choices = self.get_model_fields(self.instance.model_name)
@@ -670,14 +671,6 @@ class CustomReportForm(forms.ModelForm):
             elif f.is_relation:
                 fields.append((f.name, f.verbose_name))
         return fields
-
-    def clean(self):
-        cleaned_data = super().clean()
-        ordered_fields = cleaned_data.get('ordered_fields')
-        if ordered_fields:
-            cleaned_data['fields'] = ordered_fields.split(',')
-        return cleaned_data
-    
         
     
 class ReportFilterForm(forms.Form):
@@ -782,3 +775,144 @@ class FileNumberUpdateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['fileNumber'].widget.attrs.update({'class': 'focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-md'})
+        
+        
+from django import forms
+from .models import Employee, Discrepancy
+
+class FieldUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Employee
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        fields = kwargs.pop('fields', None)
+        super().__init__(*args, **kwargs)
+        if fields:
+            allowed = set(fields)
+            existing = set(self.fields.keys())
+            for field_name in existing - allowed:
+                self.fields.pop(field_name)
+
+class DiscrepancyResolutionForm(forms.ModelForm):
+    class Meta:
+        model = Discrepancy
+        fields = ['resolution']
+        widgets = {
+            'resolution': forms.Textarea(attrs={'rows': 3}),
+        }
+
+class FinalVerificationForm(forms.Form):
+    verification_notes = forms.CharField(
+        widget=forms.Textarea(attrs={'rows': 4}),
+        required=False,
+        help_text="Add any additional notes about the verification process."
+    )
+    confirm_verification = forms.BooleanField(
+        required=True,
+        label="I confirm that all information has been verified and is correct."
+    )
+    
+    
+from django import forms
+from .models import Employee, State, LGA, Department, GradeLevel
+
+            
+class StaffSearchForm(forms.Form):
+    search_term = forms.CharField(max_length=100, label="Search by IPPIS or File Number")
+
+from django import forms
+from .models import Employee, State, LGA, Department, Division, OfficialAppointment, GradeLevel
+
+class EmployeeVerificationForm(forms.ModelForm):
+    class Meta:
+        model = Employee
+        fields = [
+            'ippisNumber', 'fileNumber', 'lastName','middleName', 'firstName', 'surname_ippis', 'middleName_ippis',
+            'firstName_ippis', 'dateOfBirth', 'dateOfBirth_ippis',
+            'gender', 'maritalStatus', 'phoneNumber', 'emailAddress',
+            'residentialAddress', 'stateOfOrigin', 'lgaOfOrigin',
+            'dateOfFirstAppointment', 'dateOfFirstAppointment_ippis', 'dateOfPresentAppointment', 'dateOfConfirmation',
+             'lastPromotionDate',
+            'stateOfPosting', 'station',
+            'department', 'division', 'cadre', 'currentGradeLevel', 'currentStep', 'presentAppointment',
+            'pfa','pfaNumber',
+            'nok1_name', 'nok1_relationship', 'nok1_phoneNumber', 'nok1_address',
+            'nok2_name', 'nok2_relationship', 'nok2_phoneNumber', 'nok2_address',
+        ]
+        widgets = {
+            'ippisNumber': forms.TextInput(attrs={'readonly': 'readonly'}),
+            'fileNumber': forms.TextInput(attrs={'readonly': 'readonly'}),
+            'lastName': forms.TextInput(attrs={'readonly': 'readonly'}),
+            'firstName': forms.TextInput(attrs={'readonly': 'readonly'}),
+            'dateOfBirth': forms.DateInput(attrs={'type': 'date', 'readonly': 'readonly'}),
+            'dateOfBirth_ippis': forms.DateInput(attrs={'type': 'date'}),
+            'dateOfFirstAppointment': forms.DateInput(attrs={'type': 'date', 'readonly': 'readonly'}),
+            'dateOfFirstAppointment_ippis': forms.DateInput(attrs={'type': 'date'}),
+            'dateOfPresentAppointment': forms.DateInput(attrs={'type': 'date'}),
+            'dateOfConfirmation': forms.DateInput(attrs={'type': 'date'}),
+            'lastPromotionDate': forms.DateInput(attrs={'type': 'date'}),
+            'stateOfOrigin': forms.Select(),
+            'lgaOfOrigin': forms.Select(),
+            'department': forms.Select(),
+            'cadre': forms.Select(choices=OfficialAppointment.CADRE_CHOICES),
+            'division': forms.Select(),
+            'currentGradeLevel': forms.Select(),
+            'stateOfPosting': forms.Select(),
+            'station': forms.Select(),
+            'presentAppointment': forms.Select(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            if field not in ['ippisNumber', 'fileNumber', 'dateOfBirth', 'dateOfFirstAppointment']:
+                self.fields[field].widget.attrs['class'] = 'form-input'
+            else:
+                self.fields[field].widget.attrs['class'] = 'form-input bg-gray-100'
+
+        # Initialize querysets
+        self.fields['stateOfOrigin'].queryset = State.objects.all()
+        self.fields['stateOfPosting'].queryset = State.objects.all()
+        self.fields['department'].queryset = Department.objects.all()
+        self.fields['currentGradeLevel'].queryset = GradeLevel.objects.all()
+
+        # Set up initial values for dependent fields
+        if self.instance.pk:
+            self.fields['lgaOfOrigin'].queryset = LGA.objects.filter(state=self.instance.stateOfOrigin)
+            self.fields['station'].queryset = LGA.objects.filter(state=self.instance.stateOfPosting)
+            self.fields['division'].queryset = Division.objects.filter(department=self.instance.department)
+            self.fields['presentAppointment'].queryset = OfficialAppointment.objects.filter(department=self.instance.department)
+
+        # If the form is bound, update the querysets based on the POST data
+        if self.is_bound:
+            if 'stateOfOrigin' in self.data:
+                try:
+                    state_id = int(self.data.get('stateOfOrigin'))
+                    self.fields['lgaOfOrigin'].queryset = LGA.objects.filter(state_id=state_id)
+                except (ValueError, TypeError):
+                    pass
+            if 'stateOfPosting' in self.data:
+                try:
+                    state_id = int(self.data.get('stateOfPosting'))
+                    self.fields['station'].queryset = LGA.objects.filter(state_id=state_id)
+                except (ValueError, TypeError):
+                    pass
+            if 'department' in self.data:
+                try:
+                    department_id = int(self.data.get('department'))
+                    self.fields['division'].queryset = Division.objects.filter(department_id=department_id)
+                    self.fields['presentAppointment'].queryset = OfficialAppointment.objects.filter(department_id=department_id)
+                except (ValueError, TypeError):
+                    pass
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Add any custom validation here
+        return cleaned_data
+
+class CompleteVerificationForm(forms.Form):
+    captured_image = forms.CharField(widget=forms.HiddenInput, required=False)
+    verification_notes = forms.CharField(widget=forms.Textarea)
+    attestation = forms.BooleanField(required=True, label="I attest that I have truthfully verified this employee's information.")
+    

@@ -56,8 +56,23 @@ admin.site.register(Department, DepartmentAdmin)
 admin.site.register(Division, DivisionAdmin)
 admin.site.register(GradeLevel, GradeLevelAdmin)
 admin.site.register(OfficialAppointment, OfficialAppointmentAdmin)
-admin.site.register(StaffAuditEmployee)
+
+class StaffAuditEmployeeAdmin(ImportExportModelAdmin):
+    list_display = ('surname', 'otherNames',)
+    
+admin.site.register(StaffAuditEmployee, StaffAuditEmployeeAdmin)
 admin.site.register(Employee)
 admin.site.register(EducationAndTraining)
 admin.site.register(Discrepancy)
 
+
+class PFAAdmin(ImportExportModelAdmin):
+    list_display = ('name', 'code')
+    search_fields = ('name', 'code')
+    
+admin.site.register(PFA, PFAAdmin)
+
+class BankAdmin(ImportExportModelAdmin):
+    list_display = ('name', 'code')
+    search_fields = ('name', 'code')
+admin.site.register(Bank, BankAdmin)

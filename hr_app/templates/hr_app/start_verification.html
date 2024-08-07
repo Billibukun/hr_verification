@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-primary mb-8">Verify Employee Information</h1>
+    <form method="post" id="employeeForm">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for field in form %}
+                <div class="{% if field.name in 'ippisNumber,fileNumber' %}col-span-2{% endif %}">
+                    {{ field|as_crispy_field }}
+                </div>
+            {% endfor %}
+        </div>
+        <div class="mt-8">
+            <button type="submit" class="btn btn-primary">Continue to Final Verification</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        function updateLGA(stateSelect, lgaSelect) {
+            var stateCode = $(stateSelect).val();
+            var lgaSelect = $(lgaSelect);
+            lgaSelect.empty();
+            if (stateCode) {
+                $.ajax({
+                    url: "{% url 'get_lgas' %}",
+                    data: {
+                        'state_code': stateCode
+                    },
+                    success: function(data) {
+                        lgaSelect.append($('<option></option>').attr('value', '').text('---------'));
+                        $.each(data, function(index, item) {
+                            lgaSelect.append($('<option></option>').attr('value', item.code).text(item.name));
+                        });
+                    }
+                });
+            }
+        }
+
+        function updateDivisions() {
+            var departmentCode = $('#id_department').val();
+            var divisionSelect = $('#id_division');
+            divisionSelect.empty();
+            if (departmentCode) {
+                $.ajax({
+                    url: "{% url 'get_divisions' %}",
+                    data: {
+                        'department_code': departmentCode
+                    },
+                    success: function(data) {
+                        divisionSelect.append($('<option></option>').attr('value', '').text('---------'));
+                        $.each(data, function(index, item) {
+                            divisionSelect.append($('<option></option>').attr('value', item.code).text(item.name));
+                        });
+                    }
+                });
+            }
+        }
+
+        function updateOfficialAppointments() {
+            var departmentCode = $('#id_department').val();
+            var gradeLevel = $('#id_currentGradeLevel').val();
+            var cadre = $('#id_cadre').val();
+            var appointmentSelect = $('#id_presentAppointment');
+            appointmentSelect.empty();
+            if (departmentCode) {
+                $.ajax({
+                    url: "{% url 'get_official_appointments' %}",
+                    data: {
+                        'department_code': departmentCode,
+                        'grade_level': gradeLevel,
+                        'cadre': cadre
+                    },
+                    success: function(data) {
+                        appointmentSelect.append($('<option></option>').attr('value', '').text('---------'));
+                        $.each(data, function(index, item) {
+                            appointmentSelect.append($('<option></option>').attr('value', item.code).text('GL ' + item.grade_level + ' - ' + item.name + ' (' + item.cadre + ')'));
+                        });
+                    }
+                });
+            }
+        }
+
+        $('#id_stateOfOrigin').change(function() {
+            updateLGA('#id_stateOfOrigin', '#id_lgaOfOrigin');
+        });
+
+        $('#id_stateOfPosting').change(function() {
+            updateLGA('#id_stateOfPosting', '#id_station');
+        });
+
+        $('#id_department').change(function() {
+            updateDivisions();
+            updateOfficialAppointments();
+        });
+
+        $('#id_currentGradeLevel, #id_cadre').change(function() {
+            updateOfficialAppointments();
+        });
+
+        // Trigger changes on page load if values are pre-selected
+        $('#id_stateOfOrigin, #id_stateOfPosting, #id_department, #id_currentGradeLevel, #id_cadre').trigger('change');
+    });
+</script>
+{% endblock %}

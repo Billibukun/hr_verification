@@ -50,6 +50,8 @@
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {% if user_role in 'DRUID_VIEWER,SUPER_ADMIN,DIRECTOR_GENERAL,HR_ADMIN,VERIFICATION_OFFICER' %}
                 <a href="{% url 'search_verify_employees' %}" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Verify Employees</a>
+                <a href="{% url 'search_staff' %}" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Search & Verify Staff</a>
+
                 {% endif %}
 
                 {% if user_role in 'DRUID_VIEWER,SUPER_ADMIN,DIRECTOR_GENERAL,HR_ADMIN' %}
@@ -58,6 +60,7 @@
 
                 {% if user_role in 'DRUID_VIEWER,SUPER_ADMIN,HR_ADMIN' %}
                 <a href="{% url 'manage_employees' %}" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Manage Employees</a>
+                <a href="{% url 'data_upload' %}" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Upload Data</a>
                 {% endif %}
 
                 {% if user_role in 'DRUID_VIEWER,SUPER_ADMIN,DIRECTOR_GENERAL,HR_ADMIN' %}
@@ -71,7 +74,7 @@
 
                 {% if user_role in 'DRUID_VIEWER,HR_ADMIN,IT_ADMIN' %}
                 <a href="{% url 'user_list' %}" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Manage Users</a>
-                
+
                 {% endif %}
 
                 {% if user_role in 'DRUID_VIEWER,HR_DATA_SCREENING' %}

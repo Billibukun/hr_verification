@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.css">
+<style>
+    :root {
+        --primary-color: #1d741b;
+        --secondary-color: #ab8206;
+    }
+    .dropzone {
+        border: 2px dashed var(--primary-color);
+        border-radius: 5px;
+        background: white;
+        min-height: 150px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .dropzone .dz-message {
+        font-weight: 400;
+    }
+    .dropzone .dz-message .note {
+        font-size: 0.8em;
+        font-weight: 200;
+        display: block;
+        margin-top: 1.4rem;
+    }
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+    .btn-primary:hover {
+        background-color: var(--secondary-color);
+    }
+    .table-auto {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .table-auto th, .table-auto td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+    .table-auto th {
+        background-color: var(--primary-color);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8 text-gray-800">Upload Data</h1>
+    
+    <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+        <form action="{% url 'data_upload' %}" class="dropzone" id="my-dropzone">
+            {% csrf_token %}
+            <div class="fallback">
+                <input name="file" type="file" multiple />
+            </div>
+            <div class="dz-message needsclick">
+                <h4 class="text-xl font-semibold mb-2">Drop files here or click to upload.</h4>
+                <span class="note">(Only .csv files will be accepted)</span>
+            </div>
+        </form>
+        
+        <div class="mt-8">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="model">
+                Select Model to Upload
+            </label>
+            <select name="model" id="model" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                {% for value, label in model_choices %}
+                    <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="mt-8">
+            <button id="submit-all" class="btn-primary">
+                Upload Data
+            </button>
+        </div>
+    </div>
+
+    <div id="csv-preview" class="mt-8 hidden">
+        <h2 class="text-2xl font-semibold mb-4 text-gray-800">CSV Preview (First 5 Rows)</h2>
+        <div class="overflow-x-auto">
+            <table class="table-auto">
+                <thead>
+                    <tr id="preview-headers"></tr>
+                </thead>
+                <tbody id="preview-rows"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="upload-results" class="mt-8 hidden">
+        <h2 class="text-2xl font-semibold mb-4 text-gray-800">Upload Results</h2>
+        <div id="results-content" class="bg-white shadow-md rounded px-8 py-6">
+            <!-- Results will be dynamically inserted here -->
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="messages mt-8">
+        {% for message in messages %}
+        <div class="bg-{% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% else %}blue{% endif %}-100 border border-{% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% else %}blue{% endif %}-400 text-{% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% else %}blue{% endif %}-700 px-4 py-3 rounded relative" role="alert">
+            <span class="block sm:inline">{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.js"></script>
+<script>
+Dropzone.autoDiscover = false;
+
+document.addEventListener('DOMContentLoaded', function() {
+    var myDropzone = new Dropzone("#my-dropzone", {
+        paramName: "file",
+        maxFilesize: 2, // MB
+        maxFiles: 1,
+        acceptedFiles: ".csv",
+        autoProcessQueue: false,
+        addRemoveLinks: true,
+        dictDefaultMessage: "Drop your CSV file here",
+    });
+
+    var submitButton = document.querySelector("#submit-all");
+    
+    submitButton.addEventListener("click", function() {
+        if (myDropzone.getQueuedFiles().length > 0) {
+            myDropzone.processQueue();
+        } else {
+            alert("Please add a file before uploading.");
+        }
+    });
+
+    myDropzone.on("sending", function(file, xhr, formData) {
+        formData.append("model", document.querySelector("#model").value);
+    });
+
+    myDropzone.on("success", function(file, response) {
+        document.querySelector("#upload-results").classList.remove("hidden");
+        document.querySelector("#results-content").innerHTML = `
+            <p>Upload completed:</p>
+            <ul>
+                <li>Created: ${response.created}</li>
+                <li>Updated: ${response.updated}</li>
+                <li>Errors: ${response.errors}</li>
+            </ul>
+            <p>${response.message}</p>
+        `;
+
+        // Display CSV preview
+        document.querySelector("#csv-preview").classList.remove("hidden");
+        var previewHeaders = document.querySelector("#preview-headers");
+        var previewRows = document.querySelector("#preview-rows");
+        
+        previewHeaders.innerHTML = response.preview.headers.map(header => `<th>${header}</th>`).join('');
+        previewRows.innerHTML = response.preview.rows.map(row => 
+            `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`
+        ).join('');
+    });
+
+    myDropzone.on("error", function(file, errorMessage) {
+        document.querySelector("#upload-results").classList.remove("hidden");
+        document.querySelector("#results-content").innerHTML = `
+            <p class="text-red-500">Error: ${errorMessage}</p>
+        `;
+    });
+});
+</script>
+{% endblock %}

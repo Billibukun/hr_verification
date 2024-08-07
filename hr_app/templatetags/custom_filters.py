@@ -26,3 +26,7 @@ def default_if_none(value, default):
 @register.filter
 def get_item(dictionary, key):
     return dictionary.get(key)
+
+@register.filter
+def replace_underscores(value):
+    return value.replace('_', ' ')

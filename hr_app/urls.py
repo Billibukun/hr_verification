@@ -47,7 +47,10 @@ urlpatterns = [
     path('officialappointments/<str:pk>/delete/', views.OfficialAppointmentDeleteView.as_view(), name='officialappointment_delete'),
     
     # employee urls
-    path('user-login/', views.UserLoginView.as_view(), name='admin_login'),\
+    path('accounts/login/', auth_views.LoginView.as_view(template_name='hr_app/user_login.html'), name='admin_login'),
+    path('accounts/logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
+
+    path('user-login/', views.UserLoginView.as_view(), name='admin_login'),
     path('accounts/profile/', views.profile, name='profile'),
     path('logout/', auth_views.LogoutView.as_view(next_page='admin_login'), name='logout'),
    
@@ -78,7 +81,12 @@ urlpatterns = [
     path('employees/<int:employee_id>/edit/', views.employee_edit, name='employee_edit'),
     path('employees/<int:employee_id>/delete/', views.employee_delete, name='employee_delete'),
     path('employees/search-verify/', views.search_verify_employees, name='search_verify_employees'),
-    
+    path('search/', views.search_verify_employees, name='search_verify_employees'),
+    path('employee/<int:employee_id>/', views.employee_detail, name='employee_detail'),
+    path('employee/<int:employee_id>/verification/', views.employee_verification_summary, name='employee_verification_summary'),
+    path('employee/<int:employee_id>/update/<str:field_name>/', views.update_field, name='update_field'),
+    path('employee/<int:employee_id>/complete-verification/', views.complete_verification, name='complete_verification'),
+
     
     path('discrepancies/', views.manage_discrepancies, name='manage_discrepancies'),
     path('discrepancies/<int:discrepancy_id>/resolve/', views.resolve_discrepancy, name='resolve_discrepancy'),
@@ -99,6 +107,9 @@ urlpatterns = [
     path('employee/<int:employee_id>/verify/', views.employee_verification, name='employee_verification'),
     path('employee/<int:employee_id>/approve-section/', views.approve_section, name='approve_section'),
     path('discrepancy/<int:discrepancy_id>/resolve/', views.resolve_discrepancy, name='resolve_discrepancy'),
+    path('employee/<int:employee_id>/verification-summary/', views.employee_verification_summary, name='employee_verification_summary'),
+    path('employee/<int:employee_id>/update-field/<str:field_name>/', views.update_field, name='update_field'),
+    path('employee/<int:employee_id>/complete-verification/', views.complete_verification, name='complete_verification'),
     
     
     path('file-number-discrepancies/', views.file_number_discrepancies, name='file_number_discrepancies'),
@@ -110,5 +121,15 @@ urlpatterns = [
     path('helpdesk/manage/', views.manage_tickets, name='manage_tickets'),
     path('helpdesk/<int:ticket_id>/resolve/', views.resolve_ticket, name='resolve_ticket'),
 
-           
+
+    path('api/lgas/', views.get_lgas, name='get_lgas'),
+    path('api/divisions/', views.get_divisions, name='get_divisions'),
+    path('api/official-appointments/', views.get_official_appointments, name='get_official_appointments'),
+
+    path('search-staff/', views.search_staff, name='search_staff'),
+    path('view-staff-audit/<str:ippis_number>/', views.view_staff_audit, name='view_staff_audit'),
+    path('start-verification/<str:ippis_number>/', views.start_verification, name='start_verification'),
+    path('complete-verification/<str:ippis_number>/', views.complete_verification, name='complete_verification'),
+    path('dashboard/data-upload/', views.data_upload, name='data_upload'),
+    path('employee/<str:ippis_number>/data/', views.view_employee_data, name='view_employee_data'),
 ]

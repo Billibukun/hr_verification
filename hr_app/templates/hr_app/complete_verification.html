@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-primary mb-8">Complete Verification</h1>
+    <form method="post" id="verificationForm">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <div class="mt-4">
+            <h2 class="text-xl font-bold text-primary mb-2">Capture Image</h2>
+            <div class="flex flex-col items-center">
+                <video id="video" width="400" height="300" autoplay></video>
+                <canvas id="canvas" width="400" height="300" style="display:none;"></canvas>
+                <img id="capturedImage" src="" alt="Captured image" style="display:none; max-width: 400px; max-height: 300px;">
+                <select id="cameraSelect" class="form-select mb-2">
+                    <option value="">Select Camera</option>
+                </select>
+                <button type="button" id="startCamera" class="btn btn-secondary mb-2">Start Camera</button>
+                <button type="button" id="captureImage" class="btn btn-primary mb-2" style="display:none;">Capture Image</button>
+                <button type="button" id="retakeImage" class="btn btn-secondary mb-2" style="display:none;">Retake Image</button>
+            </div>
+        </div>
+        <div class="mt-8">
+            <button type="submit" class="btn btn-primary">Complete Verification</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const capturedImage = document.getElementById('capturedImage');
+    const startCameraButton = document.getElementById('startCamera');
+    const captureButton = document.getElementById('captureImage');
+    const retakeButton = document.getElementById('retakeImage');
+    const cameraSelect = document.getElementById('cameraSelect');
+    let stream;
+
+    // Populate camera selection dropdown
+    navigator.mediaDevices.enumerateDevices()
+        .then(devices => {
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+            videoDevices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.deviceId;
+                option.text = device.label || 'Camera ' + (videoDevices.indexOf(device) + 1);
+                cameraSelect.appendChild(option);
+            });
+        });
+
+    startCameraButton.addEventListener('click', async function() {
+        try {
+            const deviceId = cameraSelect.value;
+            const constraints = deviceId ? { video: { deviceId: { exact: deviceId } } } : { video: true };
+
+            stream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = stream;
+            video.autoplay = true;
+            video.style.display = 'block';
+            startCameraButton.style.display = 'none';
+            captureButton.style.display = 'block';
+        } catch (err) {
+            console.error("Error accessing the camera", err);
+            alert("Error accessing the camera. Please make sure you have given permission to use the camera.");
+        }
+    });
+
+    captureButton.addEventListener('click', function() {
+        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageDataUrl = canvas.toDataURL('image/jpeg');
+        capturedImage.src = imageDataUrl;
+        document.getElementById('id_captured_image').value = imageDataUrl;
+
+        video.style.display = 'none';
+        capturedImage.style.display = 'block';
+        captureButton.style.display = 'none';
+        retakeButton.style.display = 'block';
+
+        // Stop the camera stream
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop()); 
+        }
+    });
+
+    retakeButton.addEventListener('click', function() {
+        capturedImage.style.display = 'none';
+        video.style.display = 'block';
+        retakeButton.style.display = 'none';
+        captureButton.style.display = 'block';
+        document.getElementById('id_captured_image').value = '';
+
+        // Restart the camera
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(newStream => {
+                stream = newStream;
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.error("Error accessing the camera", err);
+                alert("Error accessing the camera. Please make sure you have given permission to use the camera.");
+            });
+    });
+
+    document.getElementById('verificationForm').addEventListener('submit', function(e) {
+        if (!document.getElementById('id_captured_image').value) {
+            e.preventDefault();
+            alert('Please capture an image before completing the verification.');
+        }
+    });
+</script>
+{% endblock %}
