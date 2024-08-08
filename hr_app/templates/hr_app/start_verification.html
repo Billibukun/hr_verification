@@ -1,111 +1,172 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
+{% load custom_filters %}
+
+{% block extra_css %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.8.0/flowbite.min.css" rel="stylesheet" />
+<style>
+    .error-message {
+        color: #dc2626;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold text-primary mb-8">Verify Employee Information</h1>
-    <form method="post" id="employeeForm">
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl font-bold mb-8 text-gray-800">Start Employee Verification</h1>
+    
+    <form method="post" enctype="multipart/form-data" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
         {% csrf_token %}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {% for field in form %}
-                <div class="{% if field.name in 'ippisNumber,fileNumber' %}col-span-2{% endif %}">
-                    {{ field|as_crispy_field }}
+        
+        {% for section in form_sections %}
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">{{ section.title }}</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {% for field_name in section.fields %}
+                        <div class="form-group">
+                            {% with field=form|get_field:field_name %}
+                                {% if field %}
+                                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 {% if field.errors %}text-red-700{% endif %}">
+                                        {{ field.label }}
+                                    </label>
+                                    {% if field.field.widget.attrs.readonly %}
+                                        <input type="text" id="{{ field.id_for_label }}" name="{{ field.html_name }}" 
+                                               value="{{ field.value|default_if_none:'' }}" 
+                                               class="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 {% if field.errors %}border-red-500{% endif %}" 
+                                               readonly>
+                                    {% elif 'datepicker-input' in field.field.widget.attrs.class %}
+                                        <div class="relative">
+                                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z"/>
+                                                </svg>
+                                            </div>
+                                            <input datepicker datepicker-format="yyyy-mm-dd" type="text" id="{{ field.id_for_label }}" name="{{ field.html_name }}" 
+                                                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5 {% if field.errors %}border-red-500{% endif %}" 
+                                                   placeholder="Select date" value="{{ field.value|date:'Y-m-d'|default_if_none:'' }}">
+                                        </div>
+                                    {% else %}
+                                        {{ field }}
+                                    {% endif %}
+                                    {% if field.errors %}
+                                        <div class="error-message">
+                                            {% for error in field.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    {% endfor %}
                 </div>
-            {% endfor %}
-        </div>
-        <div class="mt-8">
-            <button type="submit" class="btn btn-primary">Continue to Final Verification</button>
+            </div>
+        {% endfor %}
+        
+        <div class="mt-8 flex justify-end">
+            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Continue to Verification
+            </button>
         </div>
     </form>
 </div>
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.8.0/datepicker.min.js"></script>
 <script>
-    $(document).ready(function() {
-        function updateLGA(stateSelect, lgaSelect) {
-            var stateCode = $(stateSelect).val();
-            var lgaSelect = $(lgaSelect);
-            lgaSelect.empty();
-            if (stateCode) {
-                $.ajax({
-                    url: "{% url 'get_lgas' %}",
-                    data: {
-                        'state_code': stateCode
-                    },
-                    success: function(data) {
-                        lgaSelect.append($('<option></option>').attr('value', '').text('---------'));
-                        $.each(data, function(index, item) {
-                            lgaSelect.append($('<option></option>').attr('value', item.code).text(item.name));
-                        });
-                    }
-                });
-            }
+$(document).ready(function() {
+    // Flowbite datepicker initialization is automatic
+
+    function updateLGA(stateSelect, lgaSelect) {
+        var stateCode = $(stateSelect).val();
+        var $lgaSelect = $(lgaSelect);
+        $lgaSelect.empty().append($('<option>').attr('value', '').text('---------'));
+        
+        if (stateCode) {
+            $.ajax({
+                url: "{% url 'get_lgas' %}",
+                data: { 'state_code': stateCode },
+                success: function(data) {
+                    $.each(data, function(index, item) {
+                        $lgaSelect.append($('<option>').attr('value', item.code).text(item.name));
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error("AJAX error:", status, error);
+                }
+            });
         }
+    }
 
-        function updateDivisions() {
-            var departmentCode = $('#id_department').val();
-            var divisionSelect = $('#id_division');
-            divisionSelect.empty();
-            if (departmentCode) {
-                $.ajax({
-                    url: "{% url 'get_divisions' %}",
-                    data: {
-                        'department_code': departmentCode
-                    },
-                    success: function(data) {
-                        divisionSelect.append($('<option></option>').attr('value', '').text('---------'));
-                        $.each(data, function(index, item) {
-                            divisionSelect.append($('<option></option>').attr('value', item.code).text(item.name));
-                        });
-                    }
-                });
-            }
+    function updateDivisions() {
+        var departmentCode = $('#id_department').val();
+        var $divisionSelect = $('#id_division');
+        $divisionSelect.empty().append($('<option>').attr('value', '').text('---------'));
+        
+        if (departmentCode) {
+            $.ajax({
+                url: "{% url 'get_divisions' %}",
+                data: { 'department_code': departmentCode },
+                success: function(data) {
+                    $.each(data, function(index, item) {
+                        $divisionSelect.append($('<option>').attr('value', item.code).text(item.name));
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error("AJAX error:", status, error);
+                }
+            });
         }
+    }
 
-        function updateOfficialAppointments() {
-            var departmentCode = $('#id_department').val();
-            var gradeLevel = $('#id_currentGradeLevel').val();
-            var cadre = $('#id_cadre').val();
-            var appointmentSelect = $('#id_presentAppointment');
-            appointmentSelect.empty();
-            if (departmentCode) {
-                $.ajax({
-                    url: "{% url 'get_official_appointments' %}",
-                    data: {
-                        'department_code': departmentCode,
-                        'grade_level': gradeLevel,
-                        'cadre': cadre
-                    },
-                    success: function(data) {
-                        appointmentSelect.append($('<option></option>').attr('value', '').text('---------'));
-                        $.each(data, function(index, item) {
-                            appointmentSelect.append($('<option></option>').attr('value', item.code).text('GL ' + item.grade_level + ' - ' + item.name + ' (' + item.cadre + ')'));
-                        });
-                    }
-                });
-            }
+    function updateOfficialAppointments() {
+        var departmentCode = $('#id_department').val();
+        var gradeLevel = $('#id_currentGradeLevel').val();
+        var cadre = $('#id_cadre').val();
+        var $appointmentSelect = $('#id_presentAppointment');
+        $appointmentSelect.empty().append($('<option>').attr('value', '').text('---------'));
+        
+        if (departmentCode) {
+            $.ajax({
+                url: "{% url 'get_official_appointments' %}",
+                data: {
+                    'department_code': departmentCode,
+                    'grade_level': gradeLevel,
+                    'cadre': cadre
+                },
+                success: function(data) {
+                    $.each(data, function(index, item) {
+                        $appointmentSelect.append($('<option>').attr('value', item.code).text('GL ' + item.grade_level + ' - ' + item.name + ' (' + item.cadre + ')'));
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error("AJAX error:", status, error);
+                }
+            });
         }
+    }
 
-        $('#id_stateOfOrigin').change(function() {
-            updateLGA('#id_stateOfOrigin', '#id_lgaOfOrigin');
-        });
-
-        $('#id_stateOfPosting').change(function() {
-            updateLGA('#id_stateOfPosting', '#id_station');
-        });
-
-        $('#id_department').change(function() {
-            updateDivisions();
-            updateOfficialAppointments();
-        });
-
-        $('#id_currentGradeLevel, #id_cadre').change(function() {
-            updateOfficialAppointments();
-        });
-
-        // Trigger changes on page load if values are pre-selected
-        $('#id_stateOfOrigin, #id_stateOfPosting, #id_department, #id_currentGradeLevel, #id_cadre').trigger('change');
+    // Event listeners
+    $('#id_stateOfOrigin').change(function() {
+        updateLGA('#id_stateOfOrigin', '#id_lgaOfOrigin');
     });
+
+    $('#id_stateOfPosting').change(function() {
+        updateLGA('#id_stateOfPosting', '#id_station');
+    });
+
+    $('#id_department').change(function() {
+        updateDivisions();
+        updateOfficialAppointments();
+    });
+
+    $('#id_currentGradeLevel, #id_cadre').change(updateOfficialAppointments);
+
+    // Trigger changes on page load for pre-selected values
+    $('#id_stateOfOrigin, #id_stateOfPosting, #id_department, #id_currentGradeLevel, #id_cadre').trigger('change');
+});
 </script>
 {% endblock %}

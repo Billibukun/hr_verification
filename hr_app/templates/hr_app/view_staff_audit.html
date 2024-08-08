@@ -1,18 +1,181 @@
 {% extends "base.html" %}
-{% load custom_filters%}
+{% load static %}
+
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold text-primary mb-8">Staff Audit Information</h1>
-    <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
-        {% for field_name, field_value in staff_audit_data %}
-            <div class="sm:col-span-1">
-                <dt class="text-sm font-medium text-gray-500">{{ field_name|title|replace_underscores }}</dt>
-                <dd class="mt-1 text-sm text-gray-900">{{ field_value }}</dd>
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl font-bold mb-8 text-gray-800">Staff Audit Details</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Personal Information Card -->
+        <div class="bg-white shadow-md rounded-lg overflow-hidden">
+            <div class="bg-primary text-white px-4 py-2">
+                <h2 class="text-xl font-semibold">Personal Information</h2>
             </div>
-        {% endfor %}
-    </dl>
-    <div class="mt-8">
-        <a href="{% url 'start_verification' staff_audit.ippisNumber %}" class="btn btn-primary">Start Verification</a>
+            <div class="p-4">
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">IPPIS Number</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.ippisNumber }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">File Number</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.fileNumber }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Surname</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.surname }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Other Names</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.otherNames }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Date of Birth</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.dateOfBirth }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Gender</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.sex }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Marital Status</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.maritalStatus }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Phone Number</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.phoneNumber }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Employment Information Card -->
+        <div class="bg-white shadow-md rounded-lg overflow-hidden">
+            <div class="bg-primary text-white px-4 py-2">
+                <h2 class="text-xl font-semibold">Employment Information</h2>
+            </div>
+            <div class="p-4">
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Date of First Appointment</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.dateOfFirstAppointment }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Date of Present Appointment</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.dateOfPresentAppointment }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Date of Confirmation</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.dateOfConfirmation }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Grade Level</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.gradeLevel }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Step</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.step }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Department</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.department }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">State of Posting</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.stateOfPosting }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Station</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.station }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Financial Information Card -->
+        <div class="bg-white shadow-md rounded-lg overflow-hidden">
+            <div class="bg-primary text-white px-4 py-2">
+                <h2 class="text-xl font-semibold">Financial Information</h2>
+            </div>
+            <div class="p-4">
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Bank</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.bank }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Account Number</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.accountNumber }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Account Type</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.accountType }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">PFA</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.pfa }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">PFA Number</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.pfaNumber }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Next of Kin Information Card -->
+        <div class="bg-white shadow-md rounded-lg overflow-hidden">
+            <div class="bg-primary text-white px-4 py-2">
+                <h2 class="text-xl font-semibold">Next of Kin Information</h2>
+            </div>
+            <div class="p-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Next of Kin 1</h3>
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 mb-4">
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Name</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.nok1_name }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Relationship</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.nok1_relationship }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Address</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.nok1_address }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Phone Number</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.nok1_phoneNumber }}</dd>
+                    </div>
+                </dl>
+
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Next of Kin 2</h3>
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Name</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.nok2_name }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Relationship</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.nok2_relationship }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Address</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.nok2_address }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Phone Number</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ staff_audit.nok2_phoneNumber }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-8 flex justify-center">
+        <a href="{% url 'start_verification' staff_audit.ippisNumber %}" class="bg-primary hover:bg-accent text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            Start Verification
+        </a>
     </div>
 </div>
 {% endblock %}

@@ -821,8 +821,6 @@ from .models import Employee, State, LGA, Department, GradeLevel
 class StaffSearchForm(forms.Form):
     search_term = forms.CharField(max_length=100, label="Search by IPPIS or File Number")
 
-from django import forms
-from .models import Employee, State, LGA, Department, Division, OfficialAppointment, GradeLevel
 
 class EmployeeVerificationForm(forms.ModelForm):
     class Meta:
@@ -836,6 +834,7 @@ class EmployeeVerificationForm(forms.ModelForm):
              'lastPromotionDate',
             'stateOfPosting', 'station',
             'department', 'division', 'cadre', 'currentGradeLevel', 'currentStep', 'presentAppointment',
+            'bank', 'accountType', 'accountNumber',
             'pfa','pfaNumber',
             'nok1_name', 'nok1_relationship', 'nok1_phoneNumber', 'nok1_address',
             'nok2_name', 'nok2_relationship', 'nok2_phoneNumber', 'nok2_address',
@@ -845,13 +844,14 @@ class EmployeeVerificationForm(forms.ModelForm):
             'fileNumber': forms.TextInput(attrs={'readonly': 'readonly'}),
             'lastName': forms.TextInput(attrs={'readonly': 'readonly'}),
             'firstName': forms.TextInput(attrs={'readonly': 'readonly'}),
+            'middleName': forms.TextInput(attrs={'readonly': 'readonly'}),
             'dateOfBirth': forms.DateInput(attrs={'type': 'date', 'readonly': 'readonly'}),
-            'dateOfBirth_ippis': forms.DateInput(attrs={'type': 'date'}),
             'dateOfFirstAppointment': forms.DateInput(attrs={'type': 'date', 'readonly': 'readonly'}),
-            'dateOfFirstAppointment_ippis': forms.DateInput(attrs={'type': 'date'}),
-            'dateOfPresentAppointment': forms.DateInput(attrs={'type': 'date'}),
-            'dateOfConfirmation': forms.DateInput(attrs={'type': 'date'}),
-            'lastPromotionDate': forms.DateInput(attrs={'type': 'date'}),
+            'dateOfBirth_ippis': forms.DateInput(attrs={'type': 'date', 'class': 'datepicker-input'}),
+            'dateOfFirstAppointment_ippis': forms.DateInput(attrs={'type': 'date', 'class': 'datepicker-input'}),
+            'dateOfPresentAppointment': forms.DateInput(attrs={'type': 'date', 'class': 'datepicker-input'}),
+            'dateOfConfirmation': forms.DateInput(attrs={'type': 'date', 'class': 'datepicker-input'}),
+            'lastPromotionDate': forms.DateInput(attrs={'type': 'date', 'class': 'datepicker-input'}),
             'stateOfOrigin': forms.Select(),
             'lgaOfOrigin': forms.Select(),
             'department': forms.Select(),
@@ -861,6 +861,8 @@ class EmployeeVerificationForm(forms.ModelForm):
             'stateOfPosting': forms.Select(),
             'station': forms.Select(),
             'presentAppointment': forms.Select(),
+            'nok1_relationship': forms.Select(choices=Employee.NOK_RELATIONSHIP_CHOICES),
+            'nok2_relationship': forms.Select(choices=Employee.NOK_RELATIONSHIP_CHOICES),
         }
 
     def __init__(self, *args, **kwargs):
@@ -868,8 +870,8 @@ class EmployeeVerificationForm(forms.ModelForm):
         for field in self.fields:
             if field not in ['ippisNumber', 'fileNumber', 'dateOfBirth', 'dateOfFirstAppointment']:
                 self.fields[field].widget.attrs['class'] = 'form-input'
-            else:
-                self.fields[field].widget.attrs['class'] = 'form-input bg-gray-100'
+            else:   
+                self.fields[field].widget.attrs['class'] = 'form-input bg-green-100'
 
         # Initialize querysets
         self.fields['stateOfOrigin'].queryset = State.objects.all()
@@ -905,10 +907,28 @@ class EmployeeVerificationForm(forms.ModelForm):
                     self.fields['presentAppointment'].queryset = OfficialAppointment.objects.filter(department_id=department_id)
                 except (ValueError, TypeError):
                     pass
+        
+        # Make fields required
+        required_fields = [
+            'surname_ippis','firstName_ippis',
+            'dateOfBirth_ippis', 'gender', 'maritalStatus', 'phoneNumber',
+            'stateOfOrigin', 'lgaOfOrigin', 'dateOfFirstAppointment_ippis',
+            'currentGradeLevel', 'department', 'stateOfPosting', 'station',
+            'cadre', 'bank', 'accountNumber', 'accountType',
+        ]
+        for field in required_fields:
+            self.fields[field].required = True
+
+        for field_name, field in self.fields.items():
+            if field.widget.attrs.get('readonly'):
+                field.widget.attrs['class'] = 'bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5'
+            elif isinstance(field.widget, forms.DateInput):
+                field.widget.attrs['class'] = 'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5 datepicker-input'
+                field.input_formats = ['%Y-%m-%d']  # Ensure consistent date format
+            field.widget.attrs['data-field-name'] = field_name  # Add this for client-side validation
 
     def clean(self):
         cleaned_data = super().clean()
-        # Add any custom validation here
         return cleaned_data
 
 class CompleteVerificationForm(forms.Form):

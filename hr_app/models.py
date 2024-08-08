@@ -376,7 +376,13 @@ class Employee(models.Model):
         ('S', 'Savings'),
         ('C', 'Current'),
     ]
-
+    NOK_RELATIONSHIP_CHOICES = [
+        ('SPOUSE', 'Spouse'),
+        ('CHILD', 'Child'),
+        ('PARENT', 'Parent'),
+        ('SIBLING', 'Sibling'),
+        ('OTHER', 'Other'),
+    ]
     # Personal Information
     ippisNumber = models.CharField(
         max_length=8, unique=True, verbose_name="IPPIS Number")
@@ -467,7 +473,7 @@ class Employee(models.Model):
     nok1_name = models.CharField(
         max_length=50, null=True, blank=True, verbose_name="Next of Kin 1 Name")
     nok1_relationship = models.CharField(
-        max_length=50, null=True, blank=True, verbose_name="Next of Kin 1 Relationship")
+        max_length=50, choices=NOK_RELATIONSHIP_CHOICES, null=True, blank=True, verbose_name="Next of Kin 1 Relationship")
     nok1_address = models.CharField(
         max_length=100, null=True, blank=True, verbose_name="Next of Kin 1 Address")
     nok1_phoneNumber = models.CharField(
@@ -475,7 +481,7 @@ class Employee(models.Model):
     nok2_name = models.CharField(
         max_length=50, null=True, blank=True, verbose_name='Next of Kin 2 Name')
     nok2_relationship = models.CharField(
-        max_length=50, null=True, blank=True, verbose_name='Next of Kin 2 Relationship')
+        max_length=50, choices=NOK_RELATIONSHIP_CHOICES, null=True, blank=True, verbose_name='Next of Kin 2 Relationship')
     nok2_address = models.CharField(
         max_length=100, null=True, blank=True, verbose_name='Next of Kin 2 Address')
     nok2_phoneNumber = models.CharField(
@@ -512,10 +518,10 @@ class Employee(models.Model):
     isPreviousEmploymentApproved = models.BooleanField(default=False)
 
     # IPPIS Verifications
-    surname_ippis = models.CharField(max_length=50, blank=True, null=True)
-    firstName_ippis = models.CharField(max_length=50, blank=True, null=True)
-    middleName_ippis = models.CharField(max_length=50, blank=True, null=True)
-    dateOfBirth_ippis = models.DateField(blank=True, null=True)
+    surname_ippis = models.CharField(max_length=50, blank=True, null=True, verbose_name="IPPIS Surname")
+    firstName_ippis = models.CharField(max_length=50, blank=True, null=True, verbose_name="IPPIS First Name")
+    middleName_ippis = models.CharField(max_length=50, blank=True, null=True, verbose_name="IPPIS Middle Name")
+    dateOfBirth_ippis = models.DateField(blank=True, null=True, verbose_name="IPPIS Date of Birth")
     dateOfFirstAppointment_ippis = models.DateField(
         blank=True, null=True, verbose_name='IPPIS Date of First Appointment')
 

@@ -1161,14 +1161,12 @@ def generate_employee_pdf(request):
     ), id=employee_id)
 
     # Fetch related models
-    next_of_kin = NextOfKin.objects.filter(employee=employee).first()
     education_and_training = EducationAndTraining.objects.filter(employee=employee)
     previous_employments = PreviousEmployment.objects.filter(employee=employee)
 
     template = get_template('hr_app/employee_pdf_template.html')
     context = {
         'employee': employee,
-        'next_of_kin': next_of_kin,
         'education_and_training': education_and_training,
         'previous_employments': previous_employments,
         'STATIC_URL': settings.STATIC_URL,
@@ -2198,66 +2196,49 @@ def view_staff_audit(request, ippis_number):
     }
     return render(request, 'hr_app/view_staff_audit.html', context)
 
+from django.db.models import Model
+
+def serialize_for_session(value):
+    if isinstance(value, date):
+        return value.isoformat()
+    elif isinstance(value, Model):
+        return value.pk
+    return value
 
 @login_required
 @user_passes_test(lambda u: u.userprofile.role in ['DRUID_VIEWER','HR_ADMIN','IT_ADMIN','VERIFICATION_OFFICER', 'TEAM_LEAD'])
 def start_verification(request, ippis_number):
     staff_audit = get_object_or_404(StaffAuditEmployee, ippisNumber=ippis_number)
     
-    # Check if an Employee record already exists
     existing_employee = Employee.objects.filter(ippisNumber=ippis_number).first()
     if existing_employee:
-        # If an Employee record exists, redirect to the employee data page
         messages.info(request, f"Employee {ippis_number} has already been verified. Redirecting to employee data.")
         return redirect('view_employee_data', ippis_number=ippis_number)
 
     if request.method == 'POST':
-        form = EmployeeVerificationForm(request.POST, request.FILES)
+        form = EmployeeVerificationForm(request.POST)
         if form.is_valid():
-            # Create a new Employee instance but don't save it to the database yet
-            employee = Employee(ippisNumber=ippis_number)
-            
-            # Transfer data from staff audit to employee
-            for field in staff_audit._meta.fields:
-                if hasattr(employee, field.name) and field.name != 'id':
-                    setattr(employee, field.name, getattr(staff_audit, field.name))
-            
-            # Set specific fields
-            employee.lastName = staff_audit.surname
-            employee.firstName = staff_audit.otherNames.split()[0] if staff_audit.otherNames else ''
-            employee.middleName = ' '.join(staff_audit.otherNames.split()[1:]) if staff_audit.otherNames and len(staff_audit.otherNames.split()) > 1 else ''
-            
-            # Update employee with form data
-            for field, value in form.cleaned_data.items():
-                setattr(employee, field, value)
-            
-            # Set verification fields
-            employee.isVerified = True
-            employee.verifiedBy = request.user
-            employee.verificationDate = timezone.now()
-            
-            # Save the employee record
-            employee.save()
-            
-            messages.success(request, f"Verification completed for employee {ippis_number}.")
-            return redirect('view_employee_data', ippis_number=ippis_number)
+            employee_data = {key: serialize_for_session(value) for key, value in form.cleaned_data.items()}
+            request.session['employee_data'] = employee_data
+            return redirect('complete_verification', ippis_number=ippis_number)
+        else:
+            messages.error(request, "Please correct the errors in the form.")
     else:
-        # Initialize the form with data from StaffAuditEmployee
         initial_data = {
             'ippisNumber': staff_audit.ippisNumber,
             'fileNumber': staff_audit.fileNumber,
             'lastName': staff_audit.surname,
             'firstName': staff_audit.otherNames.split()[0] if staff_audit.otherNames else '',
             'middleName': ' '.join(staff_audit.otherNames.split()[1:]) if staff_audit.otherNames and len(staff_audit.otherNames.split()) > 1 else '',
-            'dateOfBirth': staff_audit.dateOfBirth,
-            'gender': staff_audit.sex,  # Assuming 'sex' in StaffAuditEmployee corresponds to 'gender' in Employee
+             'dateOfBirth': staff_audit.dateOfBirth.strftime('%Y-%m-%d') if staff_audit.dateOfBirth else '',
+            'gender': staff_audit.sex,
             'maritalStatus': staff_audit.maritalStatus,
             'phoneNumber': staff_audit.phoneNumber,
             'emailAddress': staff_audit.emailAddress,
             'residentialAddress': staff_audit.residentialAddress,
             'stateOfOrigin': staff_audit.stateOfOrigin,
             'lgaOfOrigin': staff_audit.lgaOfOrigin,
-            'dateOfFirstAppointment': staff_audit.dateOfFirstAppointment,
+            'dateOfFirstAppointment': staff_audit.dateOfFirstAppointment.strftime('%Y-%m-%d') if staff_audit.dateOfFirstAppointment else '',
             'dateOfPresentAppointment': staff_audit.dateOfPresentAppointment,
             'dateOfConfirmation': staff_audit.dateOfConfirmation,
             'currentGradeLevel': staff_audit.gradeLevel,
@@ -2271,7 +2252,6 @@ def start_verification(request, ippis_number):
             'accountType': staff_audit.accountType,
             'pfa': staff_audit.pfa,
             'pfaNumber': staff_audit.pfaNumber,
-            'isOnLeave': staff_audit.isOnLeave,
             'nok1_name': staff_audit.nok1_name,
             'nok1_relationship': staff_audit.nok1_relationship,
             'nok1_address': staff_audit.nok1_address,
@@ -2281,21 +2261,78 @@ def start_verification(request, ippis_number):
             'nok2_address': staff_audit.nok2_address,
             'nok2_phoneNumber': staff_audit.nok2_phoneNumber,
         }
-        
         form = EmployeeVerificationForm(initial=initial_data)
 
-    return render(request, 'hr_app/start_verification.html', {'form': form, 'staff_audit': staff_audit})
+    form_sections = [
+        {
+            'title': 'Personal Information',
+            'fields': ['ippisNumber', 'fileNumber', 'lastName', 'firstName', 'middleName', 
+                       'surname_ippis', 'middleName_ippis', 'firstName_ippis',
+                       'dateOfBirth', 'dateOfBirth_ippis', 'gender', 'maritalStatus', 
+                       'phoneNumber', 'emailAddress',
+                       'residentialAddress', 'stateOfOrigin', 'lgaOfOrigin']
+        },
+        {
+            'title': 'Employment Information',
+            'fields': ['dateOfFirstAppointment','dateOfFirstAppointment_ippis',
+                       'dateOfPresentAppointment', 'dateOfConfirmation', 
+                       'currentGradeLevel', 'currentStep',  'stateOfPosting', 'station', 
+                       'department','division', 'cadre', 'presentAppointment']
+        },
+        {
+            'title': 'Financial Information',
+            'fields': ['bank', 'accountNumber', 'accountType', 'pfa', 'pfaNumber']
+        },
+        {
+            'title': 'Next of Kin Information',
+            'fields': ['nok1_name', 'nok1_relationship', 'nok1_address', 'nok1_phoneNumber',
+                       'nok2_name', 'nok2_relationship', 'nok2_address', 'nok2_phoneNumber']
+        }
+    ]
+
+
+    context = {
+        'form': form,
+        'staff_audit': staff_audit,
+        'form_sections': form_sections,
+        'states': State.objects.all(),
+        'lgas': LGA.objects.all(),
+        'departments': Department.objects.all(),
+        'divisions': Division.objects.all(),
+        'grade_levels': GradeLevel.objects.all(),
+    }
+
+    return render(request, 'hr_app/start_verification.html', context)
 
 
 @login_required
 @user_passes_test(lambda u: u.userprofile.role in ['DRUID_VIEWER','HR_ADMIN','IT_ADMIN','VERIFICATION_OFFICER', 'TEAM_LEAD'])
-
 def complete_verification(request, ippis_number):
-    employee = get_object_or_404(Employee, ippisNumber=ippis_number)
+    employee_data = request.session.get('employee_data')
+    if not employee_data:
+        messages.error(request, "No employee data found. Please start the verification process again.")
+        return redirect('start_verification', ippis_number=ippis_number)
+
+    # Convert serialized data back to appropriate types
+    date_fields = ['dateOfBirth', 'dateOfFirstAppointment', 'dateOfPresentAppointment', 'dateOfConfirmation']
+    for field in date_fields:
+        if field in employee_data and employee_data[field]:
+            employee_data[field] = datetime.fromisoformat(employee_data[field]).date()
+
+    # Convert foreign key fields back to model instances
+    fk_fields = ['stateOfOrigin', 'lgaOfOrigin', 'currentGradeLevel', 'department', 'division', 'presentAppointment',
+                 'stateOfPosting', 'station', 'bank', 'pfa']
+    for field in fk_fields:
+        if field in employee_data and employee_data[field]:
+            model_class = Employee._meta.get_field(field).related_model
+            employee_data[field] = model_class.objects.get(pk=employee_data[field])
 
     if request.method == 'POST':
-        form = CompleteVerificationForm(request.POST)
+        form = CompleteVerificationForm(request.POST, request.FILES)
         if form.is_valid():
+            # Create Employee instance
+            employee = Employee(**employee_data)
+            
             # Process the captured image
             image_data = form.cleaned_data['captured_image']
             if image_data:
@@ -2308,21 +2345,8 @@ def complete_verification(request, ippis_number):
                 image.save(output, format='JPEG', quality=85)
                 output.seek(0)
                 
-                # Check if size is less than 50KB, if not, reduce quality
-                while output.getbuffer().nbytes > 50 * 1024:
-                    quality -= 5
-                    output = BytesIO()
-                    image.save(output, format='JPEG', quality=quality)
-                    output.seek(0)
-                
-                # Create a temporary file-like object
-                temp_file = tempfile.SpooledTemporaryFile()
-                temp_file.write(output.getvalue())
-                temp_file.seek(0)  # Reset the file pointer to the beginning
-
-                # Now you can save the temporary file to the database
-                employee.passport.save(f'{ippis_number}_passport.jpg', temp_file)
-                temp_file.close()  # Close the temporary file
+                # Save the image to the employee record
+                employee.passport.save(f'{ippis_number}_passport.jpg', ContentFile(output.getvalue()), save=False)
 
             employee.verificationNotes = form.cleaned_data['verification_notes']
             employee.isVerified = True
@@ -2330,12 +2354,17 @@ def complete_verification(request, ippis_number):
             employee.verificationDate = timezone.now()
             employee.save()
 
+            # Clear the session data
+            del request.session['employee_data']
+
             messages.success(request, f"Verification completed for employee {ippis_number}.")
-            return redirect('search_staff')
+            return redirect('view_employee_data', ippis_number=ippis_number)
     else:
         form = CompleteVerificationForm()
 
-    return render(request, 'hr_app/complete_verification.html', {'form': form, 'employee': employee})
+    return render(request, 'hr_app/complete_verification.html', {'form': form, 'ippis_number': ippis_number})
+
+
 
 @login_required
 @user_passes_test(lambda u: u.userprofile.role in ['DRUID_VIEWER','HR_ADMIN','IT_ADMIN','VERIFICATION_OFFICER', 'TEAM_LEAD'])
@@ -2407,14 +2436,7 @@ def get_divisions(request):
         divisions = []
     return JsonResponse(list(divisions), safe=False)
 
-
-import csv
 from io import TextIOWrapper
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.db import transaction
-from .models import Zone, State, LGA, Department, Division, GradeLevel, OfficialAppointment, Bank, PFA, StaffAuditEmployee
 import chardet
 
 @login_required

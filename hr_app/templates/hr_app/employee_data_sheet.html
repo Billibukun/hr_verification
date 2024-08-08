@@ -54,7 +54,7 @@
                         <dd class="mt-1 text-sm text-gray-900">{{ employee.dateOfPresentAppointment }}</dd>
                     </div>
                 </dl>
-            </div>
+            {% comment %} </div>
             <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
                 <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Education and Training</h3>
                 {% for education in employee.educationandtraining_set.all %}
@@ -76,7 +76,7 @@
                 {% empty %}
                     <p class="text-sm text-gray-500">No previous employment records found.</p>
                 {% endfor %}
-            </div>
+            </div> {% endcomment %}
             <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
                 <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Financial Information</h3>
                 <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
@@ -99,16 +99,43 @@
                 </dl>
             </div>
             <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Next of Kin</h3>
-                {% for kin in employee.next_of_kin.all %}
-                    <div class="mb-4">
-                        <h4 class="text-sm font-medium text-gray-700">{{ kin.fullName }} ({{ kin.relationship }})</h4>
-                        <p class="text-sm text-gray-500">Phone: {{ kin.phoneNumber }}</p>
-                        <p class="text-sm text-gray-500">Address: {{ kin.address }}</p>
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Next of Kin Information</h3>
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Next of Kin 1 Name</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.nok1_name }}</dd>
                     </div>
-                {% empty %}
-                    <p class="text-sm text-gray-500">No next of kin records found.</p>
-                {% endfor %}
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Next of Kin 1 Address</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.nok1_address }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Next of Kin 1 Phone Number</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.nok1_phoneNumber }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Next of Kin 1 Relationship</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.nok1_relationsip }}</dd>
+                    </div>
+                </dl>
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Next of Kin 2 Name</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.nok2_name }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Next of Kin 2 Address</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.nok2_address }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Next of Kin 2 Phone Number</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.nok2_phoneNumber }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Next of Kin 2 Relationship</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ employee.nok2_relationsip }}</dd>
+                    </div>
+                </dl>
             </div>
         </div>
         <div class="mt-8 flex justify-end">

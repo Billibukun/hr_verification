@@ -30,3 +30,10 @@ def get_item(dictionary, key):
 @register.filter
 def replace_underscores(value):
     return value.replace('_', ' ')
+
+@register.filter
+def get_field(form, field_name):
+    try:
+        return form[field_name]
+    except KeyError:
+        return None
