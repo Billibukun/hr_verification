@@ -37,3 +37,7 @@ def get_field(form, field_name):
         return form[field_name]
     except KeyError:
         return None
+    
+@register.filter(name='class_name')
+def class_name(value):
+    return value.__class__.__name__

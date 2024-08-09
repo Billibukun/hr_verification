@@ -3,19 +3,23 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold text-primary mb-8">File Number: {{ file_number }}</h1>
+    <h1 class="text-3xl font-bold text-primary mb-8">File Number: {{ file_number|default:"Empty" }}</h1>
 
     <div class="mb-8">
         <h2 class="text-2xl font-semibold text-primary mb-4">Staff Audit Records</h2>
         <div class="bg-white shadow overflow-hidden sm:rounded-lg">
             {% for employee in staff_audit_employees %}
                 <div class="px-4 py-5 sm:px-6 {% if not forloop.last %}border-b border-gray-200{% endif %}">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900">{{ employee.firstName }} {{ employee.lastName }}</h3>
+                    <h3 class="text-lg leading-6 font-medium text-red-700">{{ employee.surname }} {{ employee.otherNames }}</h3>
                     <div class="mt-2 grid grid-cols-2 gap-4">
                         <p class="text-sm text-gray-500">IPPIS Number: {{ employee.ippisNumber }}</p>
                         <p class="text-sm text-gray-500">Date of Birth: {{ employee.dateOfBirth|date:"Y-m-d" }}</p>
                         <p class="text-sm text-gray-500">Gender: {{ employee.get_sex_display }}</p>
                         <p class="text-sm text-gray-500">Department: {{ employee.department }}</p>
+                        <p class="text-sm text-gray-500">State of Origin: {{ employee.stateOfOrigin }}</p>
+                        <p class="text-sm text-gray-500">LGA of Origin: {{ employee.lgaOfOrigin }}</p>
+                        <p class="text-sm text-gray-500">Date of First Appointment: {{ employee.dateOfFirstAppointment|date:"Y-m-d" }}</p>
+                        <p class="text-sm text-gray-500">Current Grade Level: {{ employee.gradeLevel }}</p>
                     </div>
                     <div class="mt-4">
                         <a href="{% url 'edit_file_number' 'staff_audit' employee.id %}" class="text-primary hover:text-green-700">Edit File Number</a>
@@ -38,6 +42,11 @@
                         <p class="text-sm text-gray-500">Date of Birth: {{ employee.dateOfBirth|date:"Y-m-d" }}</p>
                         <p class="text-sm text-gray-500">Gender: {{ employee.get_gender_display }}</p>
                         <p class="text-sm text-gray-500">Department: {{ employee.department }}</p>
+                        <p class="text-sm text-gray-500">State of Origin: {{ employee.stateOfOrigin }}</p>
+                        <p class="text-sm text-gray-500">LGA of Origin: {{ employee.lgaOfOrigin }}</p>
+                        <p class="text-sm text-gray-500">Date of First Appointment: {{ employee.dateOfFirstAppointment|date:"Y-m-d" }}</p>
+                        <p class="text-sm text-gray-500">Current Grade Level: {{ employee.currentGradeLevel }}</p>
+                        <p class="text-sm text-gray-500">Verification Status: {{ employee.isVerified|yesno:"Verified,Not Verified" }}</p>
                     </div>
                     <div class="mt-4">
                         <a href="{% url 'edit_file_number' 'employee' employee.id %}" class="text-primary hover:text-green-700">Edit File Number</a>
@@ -48,6 +57,29 @@
             {% endfor %}
         </div>
     </div>
+
+    {% if staff_audit_employees or employees %}
+        <div class="mb-8">
+            <h2 class="text-2xl font-semibold text-primary mb-4">Discrepancy Analysis</h2>
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg p-4">
+                <p class="text-sm text-gray-700">
+                    {% if staff_audit_employees|length > 1 or employees|length > 1 %}
+                        <span class="font-semibold text-red-600">Warning:</span> Multiple records found with the same file number. This may indicate a data entry error or duplicate records.
+                    {% endif %}
+                </p>
+                {% if staff_audit_employees and employees %}
+                    <p class="text-sm text-gray-700 mt-2">
+                        <span class="font-semibold">Note:</span> Records exist in both Staff Audit and Employee tables. Verify if these represent the same individual and if data is consistent across both records.
+                    </p>
+                {% endif %}
+                {% if not staff_audit_employees and not employees %}
+                    <p class="text-sm text-gray-700">
+                        <span class="font-semibold text-yellow-600">Caution:</span> No records found for this file number in either Staff Audit or Employee tables. This may indicate a missing or deleted record.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
 
     <div class="mt-8 flex justify-between">
         <a href="{% url 'file_number_discrepancies' %}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">

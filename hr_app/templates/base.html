@@ -30,7 +30,7 @@
     <script>
         $(document).ready(function() {
             // Dynamic LGA based on State selection
-            $('#id_stateOfOrigin, #id_stateOfPosting').change(function() {
+            {% comment %} $('#id_stateOfOrigin, #id_stateOfPosting').change(function() {
                 var stateId = $(this).val();
                 var lgaSelect = $(this).attr('id') === 'id_stateOfOrigin' ? $('#id_lgaOfOrigin') : $('#id_station');
                 lgaSelect.empty();
@@ -60,7 +60,12 @@
             });
 
             // Trigger change event on page load if values are pre-selected
-            $('#id_stateOfOrigin, #id_stateOfPosting, #id_department').trigger('change');
+            $('#id_stateOfOrigin, #id_stateOfPosting, #id_department').trigger('change'); {% endcomment %}
+
+            // Mobile menu toggle
+            $('.mobile-menu-button').click(function() {
+                $('#mobile-menu').slideToggle();
+            });
         });
     </script>
     {% block extra_head %}{% endblock %}
@@ -71,7 +76,7 @@
             <div class="flex items-center justify-between h-16">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <span class="text-white font-bold text-xl">HR System</span>
+                        <span class="text-white font-bold text-xl">NPC HR System</span>
                     </div>
                     <div class="hidden md:block">
                         <div class="ml-10 flex items-baseline space-x-4">
@@ -80,14 +85,14 @@
                                 <a href="{% url 'profile' %}" class="text-white hover:bg-accent hover:text-white px-3 py-2 rounded-md text-sm font-medium">Profile</a>
                                 <a href="{% url 'logout' %}" class="text-white hover:bg-accent hover:text-white px-3 py-2 rounded-md text-sm font-medium">Logout</a>
                             {% else %}
-                                <a href="*#" class="text-white hover:bg-accent hover:text-white px-3 py-2 rounded-md text-sm font-medium">Login</a>
+                                <a href="#" class="text-white hover:bg-accent hover:text-white px-3 py-2 rounded-md text-sm font-medium">Login</a>
                             {% endif %}
                         </div>
                     </div>
                 </div>
                 <div class="md:hidden">
                     <!-- Mobile menu button -->
-                    <button type="button" class="inline-flex items-center justify-center p-2 rounded-md text-white hover:text-white hover:bg-accent focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" aria-controls="mobile-menu" aria-expanded="false">
+                    <button type="button" class="mobile-menu-button inline-flex items-center justify-center p-2 rounded-md text-white hover:text-white hover:bg-accent focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" aria-controls="mobile-menu" aria-expanded="false">
                         <span class="sr-only">Open main menu</span>
                         <!-- Icon when menu is closed -->
                         <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -103,7 +108,7 @@
         </div>
 
         <!-- Mobile menu, show/hide based on menu state. -->
-        <div class="md:hidden" id="mobile-menu">
+        <div class="md:hidden" id="mobile-menu" style="display: none;">
             <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
                 {% if user.is_authenticated %}
                     <a href="{% url 'admin_dashboard' %}" class="text-white hover:bg-accent hover:text-white block px-3 py-2 rounded-md text-base font-medium">Dashboard</a>
@@ -132,10 +137,10 @@
 
     <footer class="bg-primary text-white py-4">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p class="text-center">© 2023 HR Verification System. All rights reserved.</p>
+            <p class="text-center">© 2024 National Population Commission - HR Verification System. All rights reserved.</p>
         </div>
     </footer>
-    <script>
+    {% comment %} <script>
         $(document).ready(function() {
             function updateDropdown(selectElement, url, placeholder) {
                 var selectedId = $(selectElement).val();
@@ -165,7 +170,7 @@
             // Trigger change event on page load for pre-selected values
             $('[data-dropdown="state"], [data-dropdown="department"]').trigger('change');
         });
-    </script>
+    </script> {% endcomment %}
 
     {% block extra_js %}{% endblock %}
 </body>

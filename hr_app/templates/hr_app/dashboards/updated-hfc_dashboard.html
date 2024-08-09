@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}HFC Dashboard - NPC HR Management System{% endblock %}
+{% block content %}
+<div class="bg-gray-100 min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold text-primary mb-8">Honourable Federal Commissioner Dashboard</h1>
+        
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+            {% include "hr_app/components/stat_card.html" with title="Total Employees" value=total_employees %}
+            {% include "hr_app/components/stat_card.html" with title="Verified Employees" value=verified_employees %}
+            {% include "hr_app/components/stat_card.html" with title="Total Stations" value=total_stations %}
+            {% include "hr_app/components/stat_card.html" with title="Verification Progress" value=verification_progress|floatformat:2|add:"%" %}
+        </div>
+
+        <!-- Quick Actions -->
+        <h2 class="text-2xl font-bold text-primary mb-4">Quick Actions</h2>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+            {% include "hr_app/components/action_button.html" with title="View Reports" url="hfc_reports" %}
+            {% include "hr_app/components/action_button.html" with title="Station Overview" url="station_overview" %}
+            {% include "hr_app/components/action_button.html" with title="Verification Progress" url="verification_progress" %}
+        </div>
+
+        <!-- State Verification Progress -->
+        {% include "hr_app/components/verification_progress.html" with progress=verification_progress %}
+
+        <!-- Station Distribution -->
+        {% include "hr_app/components/station_distribution.html" with distribution=station_distribution %}
+    </div>
+</div>
+{% endblock %}

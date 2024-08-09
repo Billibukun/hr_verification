@@ -1,114 +1,176 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
 
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/@tailwindcss/forms@0.5.3/dist/forms.min.css" rel="stylesheet">
+<style>
+    .toggle-checkbox:checked {
+        right: 0;
+        border-color: #68D391;
+    }
+    .toggle-checkbox:checked + .toggle-label {
+        background-color: #68D391;
+    }
+    .toggle-checkbox {
+        transition: all 0.3s ease-in-out;
+    }
+    .toggle-checkbox:checked {
+        transform: translateX(100%);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold text-primary mb-8">Complete Verification</h1>
-    <form method="post" id="verificationForm">
+    <h1 class="text-3xl font-bold mb-8 text-gray-800">Complete Verification for {{ employee.firstName }} {{ employee.lastName }}</h1>
+
+    <form method="post" enctype="multipart/form-data" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
         {% csrf_token %}
-        {{ form|crispy }}
-        <div class="mt-4">
-            <h2 class="text-xl font-bold text-primary mb-2">Capture Image</h2>
-            <div class="flex flex-col items-center">
-                <video id="video" width="400" height="300" autoplay></video>
-                <canvas id="canvas" width="400" height="300" style="display:none;"></canvas>
-                <img id="capturedImage" src="" alt="Captured image" style="display:none; max-width: 400px; max-height: 300px;">
-                <select id="cameraSelect" class="form-select mb-2">
-                    <option value="">Select Camera</option>
-                </select>
-                <button type="button" id="startCamera" class="btn btn-secondary mb-2">Start Camera</button>
-                <button type="button" id="captureImage" class="btn btn-primary mb-2" style="display:none;">Capture Image</button>
-                <button type="button" id="retakeImage" class="btn btn-secondary mb-2" style="display:none;">Retake Image</button>
+        
+        <div class="mb-6">
+            {{ form.verification_notes|as_crispy_field }}
+        </div>
+
+        <div class="mb-6">
+            <div class="flex items-center justify-between">
+                <span class="text-gray-700">Request Change of Name</span>
+                <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                    <input type="checkbox" name="change_of_name" id="change_of_name" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                    <label for="change_of_name" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                </div>
+            </div>
+            <div id="name_change_fields" class="mt-4 hidden">
+                {{ form.new_last_name|as_crispy_field }}
+                {{ form.new_first_name|as_crispy_field }}
+                {{ form.new_middle_name|as_crispy_field }}
             </div>
         </div>
-        <div class="mt-8">
-            <button type="submit" class="btn btn-primary">Complete Verification</button>
+
+        <div class="mb-6">
+            <div class="flex items-center justify-between">
+                <span class="text-gray-700">Transfer Staff</span>
+                <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                    <input type="checkbox" name="transfer_staff" id="transfer_staff" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                    <label for="transfer_staff" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                </div>
+            </div>
+            <div id="transfer_fields" class="mt-4 hidden">
+                {{ form.transfer_to_state|as_crispy_field }}
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <h2 class="text-2xl font-semibold mb-4">Capture Employee Photo</h2>
+            <select id="camera-select" class="mb-4 block w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none">
+                <option value="">Select a camera</option>
+            </select>
+            <button type="button" id="start-camera" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4">
+                Start Camera
+            </button>
+            <video id="video" class="w-full max-w-md mx-auto hidden" autoplay></video>
+            <canvas id="canvas" class="w-full max-w-md mx-auto hidden"></canvas>
+            <img id="preview" class="w-full max-w-md mx-auto hidden" alt="Captured image">
+            <button type="button" id="capture" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-4 hidden">
+                Capture Photo
+            </button>
+        </div>
+
+        <input type="hidden" name="captured_image" id="captured_image">
+
+        <div class="flex items-center justify-between">
+            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Complete Verification
+            </button>
         </div>
     </form>
 </div>
 {% endblock %}
 
+
 {% block extra_js %}
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const changeNameCheckbox = document.getElementById('change_of_name');
+    const nameChangeFields = document.getElementById('name_change_fields');
+    const transferStaffCheckbox = document.getElementById('transfer_staff');
+    const transferFields = document.getElementById('transfer_fields');
+    const cameraSelect = document.getElementById('camera-select');
+    const startCameraButton = document.getElementById('start-camera');
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
-    const capturedImage = document.getElementById('capturedImage');
-    const startCameraButton = document.getElementById('startCamera');
-    const captureButton = document.getElementById('captureImage');
-    const retakeButton = document.getElementById('retakeImage');
-    const cameraSelect = document.getElementById('cameraSelect');
-    let stream;
+    const preview = document.getElementById('preview');
+    const captureButton = document.getElementById('capture');
+    const capturedImageInput = document.getElementById('captured_image');
 
-    // Populate camera selection dropdown
+    changeNameCheckbox.addEventListener('change', function() {
+        nameChangeFields.classList.toggle('hidden', !this.checked);
+    });
+
+    transferStaffCheckbox.addEventListener('change', function() {
+        transferFields.classList.toggle('hidden', !this.checked);
+    });
+
+    // Populate camera select options
     navigator.mediaDevices.enumerateDevices()
         .then(devices => {
             const videoDevices = devices.filter(device => device.kind === 'videoinput');
             videoDevices.forEach(device => {
                 const option = document.createElement('option');
                 option.value = device.deviceId;
-                option.text = device.label || 'Camera ' + (videoDevices.indexOf(device) + 1);
+                option.text = device.label || `Camera ${cameraSelect.length + 1}`;
                 cameraSelect.appendChild(option);
             });
-        });
+        })
+        .catch(err => console.error("Error enumerating devices:", err));
 
-    startCameraButton.addEventListener('click', async function() {
-        try {
-            const deviceId = cameraSelect.value;
-            const constraints = deviceId ? { video: { deviceId: { exact: deviceId } } } : { video: true };
+    startCameraButton.addEventListener('click', function() {
+        const constraints = {
+            video: {
+                deviceId: cameraSelect.value ? {exact: cameraSelect.value} : undefined
+            }
+        };
 
-            stream = await navigator.mediaDevices.getUserMedia(constraints);
-            video.srcObject = stream;
-            video.autoplay = true;
-            video.style.display = 'block';
-            startCameraButton.style.display = 'none';
-            captureButton.style.display = 'block';
-        } catch (err) {
-            console.error("Error accessing the camera", err);
-            alert("Error accessing the camera. Please make sure you have given permission to use the camera.");
-        }
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then(stream => {
+                video.srcObject = stream;
+                video.classList.remove('hidden');
+                captureButton.classList.remove('hidden');
+                startCameraButton.classList.add('hidden');
+            })
+            .catch(err => console.error("Error accessing the camera:", err));
     });
 
     captureButton.addEventListener('click', function() {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
         canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageDataUrl = canvas.toDataURL('image/jpeg');
-        capturedImage.src = imageDataUrl;
-        document.getElementById('id_captured_image').value = imageDataUrl;
-
-        video.style.display = 'none';
-        capturedImage.style.display = 'block';
-        captureButton.style.display = 'none';
-        retakeButton.style.display = 'block';
-
-        // Stop the camera stream
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop()); 
+        
+        // Simple background removal (replace with a solid color)
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            
+            // If pixel is light (assuming light background), make it white
+            if (r > 200 && g > 200 && b > 200) {
+                data[i] = 255;     // Red
+                data[i + 1] = 255; // Green
+                data[i + 2] = 255; // Blue
+            }
         }
+        
+        ctx.putImageData(imageData, 0, 0);
+        
+        const image_data_url = canvas.toDataURL('image/png');
+        preview.src = image_data_url;
+        preview.classList.remove('hidden');
+        video.classList.add('hidden');
+        capturedImageInput.value = image_data_url;
     });
-
-    retakeButton.addEventListener('click', function() {
-        capturedImage.style.display = 'none';
-        video.style.display = 'block';
-        retakeButton.style.display = 'none';
-        captureButton.style.display = 'block';
-        document.getElementById('id_captured_image').value = '';
-
-        // Restart the camera
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(newStream => {
-                stream = newStream;
-                video.srcObject = stream;
-            })
-            .catch(err => {
-                console.error("Error accessing the camera", err);
-                alert("Error accessing the camera. Please make sure you have given permission to use the camera.");
-            });
-    });
-
-    document.getElementById('verificationForm').addEventListener('submit', function(e) {
-        if (!document.getElementById('id_captured_image').value) {
-            e.preventDefault();
-            alert('Please capture an image before completing the verification.');
-        }
-    });
+});
 </script>
 {% endblock %}

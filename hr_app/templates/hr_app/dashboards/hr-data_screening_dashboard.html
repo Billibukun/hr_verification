@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}HR Data Screening Dashboard - NPC HR Management System{% endblock %}
+{% block content %}
+<div class="bg-gray-100 min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold text-primary mb-8">HR Data Screening Dashboard</h1>
+        
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+            {% include "hr_app/components/stat_card.html" with title="Total Records" value=total_records %}
+            {% include "hr_app/components/stat_card.html" with title="Records Screened" value=records_screened %}
+            {% include "hr_app/components/stat_card.html" with title="Flagged Records" value=flagged_records %}
+            {% include "hr_app/components/stat_card.html" with title="Duplicate File Numbers" value=duplicate_file_numbers %}
+        </div>
+
+        <!-- Quick Actions -->
+        <h2 class="text-2xl font-bold text-primary mb-4">Quick Actions</h2>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+            {% include "hr_app/components/action_button.html" with title="Start Screening" url="start_screening" %}
+            {% include "hr_app/components/action_button.html" with title="Review Flagged Records" url="flagged_records" %}
+            {% include "hr_app/components/action_button.html" with title="Duplicate File Numbers" url="duplicate_file_numbers" %}
+        </div>
+
+        <!-- Screening Progress -->
+        {% include "hr_app/components/screening_progress.html" %}
+
+        <!-- Recent Flagged Records -->
+        {% include "hr_app/components/recent_flagged_records.html" %}
+    </div>
+</div>
+{% endblock %}

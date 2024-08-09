@@ -1,0 +1,15 @@
+{% load custom_filters %}
+
+<div class="bg-white shadow rounded-lg p-6">
+    <ul class="divide-y divide-gray-200">
+        {% for activity in activities %}
+            <li class="py-4">
+                {% if activity|class_name == 'Employee' %}
+                    <p class="text-sm text-gray-900">Employee {{ activity.ippisNumber }} verified on {{ activity.verificationDate }}</p>
+                {% elif activity|class_name == 'Discrepancy' %}
+                    <p class="text-sm text-gray-900">Discrepancy resolved for {{ activity.employee.ippisNumber }} on {{ activity.resolutionDate }}</p>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+</div>

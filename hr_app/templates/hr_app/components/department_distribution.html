@@ -1,0 +1,12 @@
+<div class="mt-8">
+    <div class="bg-white shadow rounded-lg p-6">
+        <ul class="divide-y divide-gray-200">
+            {% for dept in department_distribution %}
+            <li class="py-4 flex justify-between">
+                <span class="text-sm font-medium text-gray-900">{{ dept.name }}</span>
+                <span class="text-sm text-gray-500">{{ dept.count }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>

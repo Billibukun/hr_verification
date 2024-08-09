@@ -1,4 +1,5 @@
 import os
+from rembg import remove
 from django.conf import settings
 from django.db.models import Q
 from io import BytesIO
@@ -551,10 +552,26 @@ class UserLoginView(LoginView):
 
 from django.contrib.auth.forms import AuthenticationForm
 
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import update_session_auth_hash
+from django.contrib import messages
+
 @login_required
 def profile(request):
     user = request.user
     user_profile = get_object_or_404(UserProfile, user=user)
+
+    if request.method == 'POST':
+        password_form = PasswordChangeForm(user, request.POST)
+        if password_form.is_valid():
+            user = password_form.save()
+            update_session_auth_hash(request, user)
+            messages.success(request, 'Your password was successfully updated!')
+            return redirect('profile')
+        else:
+            messages.error(request, 'Please correct the error below.')
+    else:
+        password_form = PasswordChangeForm(user)
 
     context = {
         'user': user,
@@ -562,6 +579,7 @@ def profile(request):
         'allowed_states': user_profile.allowedStates.all(),
         'allowed_departments': user_profile.allowedDepartments.all(),
         'allowed_zones': user_profile.allowedZones.all(),
+        'password_form': password_form,
     }
     return render(request, 'hr_app/profile.html', context)
 
@@ -1212,14 +1230,13 @@ def employee_logout(request):
 def is_authorized(user, allowed_roles):
     return user.is_authenticated and user.userprofile.role in allowed_roles
 
-
 @login_required
 def admin_dashboard(request):
     user_role = request.user.userprofile.role
     context = {
         'user_role': user_role,
-        'total_employees': Employee.objects.count(),
-        'pending_verifications': Employee.objects.filter(isVerified=False).count(),
+        'total_employees': StaffAuditEmployee.objects.count(),
+        'pending_verifications': StaffAuditEmployee.objects.filter(isProcessed=False).count(),
         'open_discrepancies': Discrepancy.objects.filter(isResolved=False).count(),
         'total_departments': Employee.objects.values('department').distinct().count(),
     }
@@ -1241,18 +1258,316 @@ def admin_dashboard(request):
             'system_health': get_system_health(),
         })
 
-    if user_role in ['HR_DATA_SCREENING']:
+    if user_role in ['DRUID_VIEWER', 'HR_DATA_SCREENING']:
         context.update({
             'duplicate_file_numbers': get_duplicate_file_numbers(),
         })
 
-    if user_role in ['HELPDESK']:
+    if user_role in ['DRUID_VIEWER', 'HELPDESK']:
         context.update({
             'open_tickets': Ticket.objects.filter(is_resolved=False).count(),
         })
 
+    # New role-specific contexts
+    if user_role in ['DRUID_VIEWER','DIRECTOR']:
+        context.update({
+            'department_employees': Employee.objects.filter(department=request.user.userprofile.department).count(),
+            'department_verification_progress': get_department_verification_progress(request.user.userprofile.department),
+        })
+
+    if user_role in ['DRUID_VIEWER','HFC']:
+        allowed_state = request.user.userprofile.allowedStates.first()
+        if allowed_state:
+            context.update({
+                'state_employees': Employee.objects.filter(stateOfPosting=allowed_state).count(),
+                'state_verification_progress': get_state_verification_progress(allowed_state),
+                'station_distribution': get_state_distribution(allowed_state),
+            })
+
+    if user_role in ['DRUID_VIEWER','TEAM_LEAD', 'VERIFICATION_OFFICER']:
+        context.update({
+            'verifications_today': get_verifications_today(),
+            'performance_score': get_performance_score(request.user),
+            'verification_queue': get_verification_queue(),
+        })
+
+    if user_role in ['DRUID_VIEWER','MONITORING_OFFICER']:
+        context.update({
+            'total_verified_employees': Employee.objects.filter(isVerified=True).count(),
+            'verification_by_department': get_verification_by_department(),
+        })
+
     return render(request, 'hr_app/admin_dashboard.html', context)
 
+# @login_required
+# def admin_dashboard(request):
+#     user_role = request.user.userprofile.role
+#     context = {
+#         'user_role': user_role,
+#         'total_employees': StaffAuditEmployee.objects.count(),
+#         'pending_verifications': StaffAuditEmployee.objects.filter(isProcessed=False).count(),
+#         'open_discrepancies': Discrepancy.objects.filter(isResolved=False).count(),
+#         'total_departments': Employee.objects.values('department').distinct().count(),
+#     }
+
+#     if user_role == 'DRUID_VIEWER':
+#         context.update({
+#             'total_users': UserProfile.objects.count(),
+#             'user_role_counts': UserProfile.objects.values('role').annotate(count=Count('role')),
+#             'verification_progress': get_verification_progress(),
+#             'discrepancy_types': get_discrepancy_types(),
+#             'system_health': get_system_health(),
+#             'duplicate_file_numbers': get_duplicate_file_numbers(),
+#             'open_tickets': Ticket.objects.filter(is_resolved=False).count(),
+#         })
+#     elif user_role == 'SUPER_ADMIN':
+#         context.update({
+#             'total_users': UserProfile.objects.count(),
+#             'user_role_counts': UserProfile.objects.values('role').annotate(count=Count('role')),
+#             'verification_progress': get_verification_progress(),
+#             'discrepancy_types': get_discrepancy_types(),
+#         })
+#     elif user_role == 'HR_ADMIN':
+#         context.update({
+#             'verification_progress': get_verification_progress(),
+#             'discrepancy_types': get_discrepancy_types(),
+#         })
+#     elif user_role == 'DIRECTOR_GENERAL':
+#         context.update({
+#             'verification_progress': get_verification_progress(),
+#             'department_distribution': get_department_distribution(),
+#         })
+#     elif user_role == 'IT_ADMIN':
+#         context.update({
+#             'system_health': get_system_health(),
+#             'total_users': UserProfile.objects.count(),
+#             'active_users': UserProfile.objects.filter(user__is_active=True).count(),
+#             'system_uptime': get_system_uptime(),
+#             'database_size': get_database_size(),
+#         })
+#     elif user_role == 'HR_DATA_SCREENING':
+#         context.update({
+#             'duplicate_file_numbers': get_duplicate_file_numbers(),
+#         })
+#     elif user_role == 'HELPDESK':
+#         context.update({
+#             'open_tickets': Ticket.objects.filter(is_resolved=False).count(),
+#         })
+
+#     # Check if the user is using the default password
+#     default_password = "defaultpassword"  # Replace with your actual default password
+#     if request.user.check_password(default_password):
+#         messages.warning(request, "Please change your default password for security reasons.")
+
+#     template_name = f'hr_app/dashboards/{user_role.lower()}_dashboard.html'
+#     return render(request, template_name, context)
+
+from django.db.models import Count, Avg
+
+@login_required
+@user_passes_test(lambda u: u.userprofile.role in ['DRUID_VIEWER', 'SUPER_ADMIN', 'DIRECTOR_GENERAL', 'HR_ADMIN'])
+def performance_metrics(request):
+    # Get the date range (last 30 days by default)
+    end_date = timezone.now().date()
+    start_date = end_date - timedelta(days=30)
+    date_range = request.GET.get('date_range', '30')
+    if date_range == '7':
+        start_date = end_date - timedelta(days=7)
+    elif date_range == '90':
+        start_date = end_date - timedelta(days=90)
+
+    # Calculate metrics
+    total_verifications = Employee.objects.filter(verificationDate__range=[start_date, end_date]).count()
+    average_verifications_per_day = total_verifications / int(date_range)
+    
+    discrepancies_found = Discrepancy.objects.filter(createdAt__range=[start_date, end_date]).count()
+    discrepancies_resolved = Discrepancy.objects.filter(resolutionDate__range=[start_date, end_date]).count()
+    
+    verification_officers = UserProfile.objects.filter(role='VERIFICATION_OFFICER').count()
+    avg_verifications_per_officer = total_verifications / verification_officers if verification_officers > 0 else 0
+    
+    total_employees = StaffAuditEmployee.objects.count()
+    verification_progress = (Employee.objects.filter(isVerified=True).count() / total_employees) * 100 if total_employees > 0 else 0
+    
+    # Updated top performers query
+    top_performers = UserProfile.objects.filter(
+        role='VERIFICATION_OFFICER',
+        user__in=Employee.objects.filter(verificationDate__range=[start_date, end_date]).values('verifiedBy')
+    ).annotate(
+        verifications_count=Count('user__employeeVerification')
+    ).order_by('-verifications_count')[:5]
+
+    context = {
+        'date_range': date_range,
+        'total_verifications': total_verifications,
+        'average_verifications_per_day': round(average_verifications_per_day, 2),
+        'discrepancies_found': discrepancies_found,
+        'discrepancies_resolved': discrepancies_resolved,
+        'verification_officers': verification_officers,
+        'avg_verifications_per_officer': round(avg_verifications_per_officer, 2),
+        'verification_progress': round(verification_progress, 2),
+        'top_performers': top_performers,
+    }
+    return render(request, 'hr_app/performance_metrics.html', context)
+
+def get_department_verification_progress(department):
+    total = StaffAuditEmployee.objects.filter(department=department).count()
+    verified = Employee.objects.filter(isVerified=True, department=department).count()
+    return (verified / total) * 100 if total > 0 else 0
+
+def get_state_verification_progress(state):
+    total = StaffAuditEmployee.objects.filter(stateOfPosting=state).count()
+    verified = Employee.objects.filter(isVerified=True, stateOfPosting=state).count()
+    return (verified / total) * 100 if total > 0 else 0
+
+def get_state_distribution(state):
+    return Employee.objects.filter(stateOfPosting=state).values('station__name').annotate(count=Count('id'))
+
+def get_verifications_today():
+    today = timezone.now().date()
+    return Employee.objects.filter(verificationDate__date=today).count()
+
+def get_performance_score(user):
+    verifications = Employee.objects.filter(verifiedBy=user).count()
+    discrepancies = Discrepancy.objects.filter(createdBy=user).count()
+    return (verifications * 10 + discrepancies * 5) / 100  # Adjust scoring as needed
+
+def get_verification_by_department():
+    return Employee.objects.filter(isVerified=True).values('department__name').annotate(count=Count('id'))
+
+
+def get_department_distribution():
+    return Employee.objects.values('department__name').annotate(count=Count('id'))
+
+def get_state_distribution(state=None):
+    queryset = Employee.objects.all()
+    if state:
+        queryset = queryset.filter(stateOfPosting=state)
+    return queryset.values('station__name').annotate(count=Count('id'))
+
+def get_state_verification_progress(state):
+    total = StaffAuditEmployee.objects.filter(stateOfPosting=state).count()
+    verified = Employee.objects.filter(isVerified=True, stateOfPosting=state).count()
+    return (verified / total) * 100 if total > 0 else 0
+
+def get_team_performance(team_lead):
+    # Filter for Verification Officers who are allowed in the same state or department
+    team_members = UserProfile.objects.filter(
+        Q(allowedStates__in=team_lead.allowedStates.all()) | Q(allowedDepartments__in=team_lead.allowedDepartments.all())
+    ).filter(role='VERIFICATION_OFFICER')
+
+    # Now we need to calculate verifications based on the 'verifiedBy' field in 'Employee'
+    total_verifications = 0
+    total_discrepancies = 0
+
+    for member in team_members:
+        # Check if the member's user has completed any verifications
+        if member.user.employeeVerification.exists():
+            total_verifications += member.user.employeeVerification.count()  
+            # Calculate total discrepancies based on Discrepancy model
+            total_discrepancies += Discrepancy.objects.filter(
+                employee__verifiedBy=member.user
+            ).count()
+
+    return {
+        'total_verifications': total_verifications,
+        'total_discrepancies': total_discrepancies,
+        'average_performance': total_verifications / len(team_members) if len(team_members) > 0 else 0
+    }
+
+@login_required
+def team_member_details(request):
+    if request.user.userprofile.role in ['DRUID_ViEWER','TEAM_LEAD']:
+        team_lead = request.user.userprofile
+        # Get team members based on allowed states or departments
+        team_members = UserProfile.objects.filter(
+            Q(allowedStates__in=team_lead.allowedStates.all()) | Q(allowedDepartments__in=team_lead.allowedDepartments.all())
+        ).filter(role='VERIFICATION_OFFICER')
+        performance_data = get_team_performance(team_lead)
+        context = {
+            'team_members': team_members,
+            'performance_data': performance_data
+        }
+        return render(request, 'hr_app/team_member_details.html', context)
+    else:
+        messages.error(request, "You do not have access to view team member details.")
+        return redirect('dashboard')
+    
+
+def get_verifications_today():
+    today = timezone.now().date()
+    return Employee.objects.filter(verificationDate__date=today).count()
+
+def get_discrepancies_found(user):
+    return Discrepancy.objects.filter(resolvedBy=user, createdAt__date=timezone.now().date()).count()
+
+def get_performance_score(user):
+    verifications = Employee.objects.filter(verifiedBy=user).count()
+    discrepancies = Discrepancy.objects.filter(resolvedBy=user).count()
+    return (verifications * 10 + discrepancies * 5) / 100  # Adjust scoring as needed
+
+def get_verification_queue():
+    return StaffAuditEmployee.objects.filter(isProcessed=False)[:10]
+
+def get_recent_activity(user):
+    activities = []
+    verifications = Employee.objects.filter(verifiedBy=user).order_by('-verificationDate')[:5]
+    discrepancies = Discrepancy.objects.filter(resolvedBy=user).order_by('-createdAt')[:5]
+    
+    for verification in verifications:
+        activities.append({
+            'type': 'verification',
+            'employee': verification,
+            'date': verification.verificationDate
+        })
+    
+    for discrepancy in discrepancies:
+        activities.append({
+            'type': 'discrepancy',
+            'discrepancy': discrepancy,
+            'date': discrepancy.createdAt
+        })
+    
+    return sorted(activities, key=lambda x: x['date'], reverse=True)[:10]
+
+def get_open_tickets():
+    return Ticket.objects.filter(is_resolved=False).count()
+
+def get_tickets_resolved_today():
+    today = timezone.now().date()
+    return Ticket.objects.filter(resolved_at__date=today).count()
+
+def get_avg_response_time():
+    resolved_tickets = Ticket.objects.filter(is_resolved=True)
+    total_time = sum((ticket.resolved_at - ticket.created_at).total_seconds() for ticket in resolved_tickets)
+    return total_time / resolved_tickets.count() if resolved_tickets.count() > 0 else 0
+
+def get_customer_satisfaction():
+    # This is a placeholder. Implement actual customer satisfaction calculation.
+    return 4.5
+
+def get_recent_tickets():
+    return Ticket.objects.order_by('-created_at')[:10]
+
+def get_ticket_categories():
+    return Ticket.objects.values('category').annotate(count=Count('category'))
+
+def get_total_records():
+    return StaffAuditEmployee.objects.count()
+
+def get_records_screened():
+    return StaffAuditEmployee.objects.filter(isProcessed=True).count()
+
+def get_flagged_records():
+    return StaffAuditEmployee.objects.filter(isFlagged=True).count()
+
+def get_screening_progress():
+    total = get_total_records()
+    screened = get_records_screened()
+    return (screened / total) * 100 if total > 0 else 0
+
+def get_recent_flagged_records():
+    return StaffAuditEmployee.objects.filter(isFlagged=True).order_by('-updatedAt')[:10]
 
 
 @login_required
@@ -1447,34 +1762,35 @@ def update_field(request, employee_id, field_name):
 
                                 
                                 
-@login_required
-@user_passes_test(lambda u: is_authorized(u, ['DRUID_VIEWER', 'SUPER_ADMIN', 'DIRECTOR_GENERAL', 'HR_ADMIN', 'VERIFICATION_OFFICER']))
-def complete_verification(request, employee_id):
-    employee = get_object_or_404(Employee, id=employee_id)
-    unverified_fields = [field for field in employee._meta.fields if field.name.endswith('_verified') and not getattr(employee, field.name)]
+# @login_required
+# @user_passes_test(lambda u: is_authorized(u, ['DRUID_VIEWER', 'SUPER_ADMIN', 'DIRECTOR_GENERAL', 'HR_ADMIN', 'VERIFICATION_OFFICER']))
+# def complete_verification(request, employee_id):
+#     employee = get_object_or_404(Employee, id=employee_id)
+#     unverified_fields = [field for field in employee._meta.fields if field.name.endswith('_verified') and not getattr(employee, field.name)]
 
-    if unverified_fields:
-        messages.error(request, "All fields must be verified before completing the verification process.")
-        return redirect('employee_verification_summary', employee_id=employee.id)
+#     if unverified_fields:
+#         messages.error(request, "All fields must be verified before completing the verification process.")
+#         return redirect('employee_verification_summary', employee_id=employee.id)
 
-    if request.method == 'POST':
-        form = FinalVerificationForm(request.POST)
-        if form.is_valid():
-            employee.isVerified = True
-            employee.verifiedBy = request.user
-            employee.verificationDate = timezone.now()
-            employee.verificationNotes = form.cleaned_data['verification_notes']
-            employee.save()
-            messages.success(request, f"Verification completed for {employee.firstName} {employee.lastName}.")
-            return redirect('search_verify_employees')
-    else:
-        form = FinalVerificationForm()
+#     if request.method == 'POST':
+#         form = FinalVerificationForm(request.POST)
+#         if form.is_valid():
+#             employee.isVerified = True
+#             employee.verifiedBy = request.user
+#             employee.verificationDate = timezone.now()
+#             employee.verificationNotes = form.cleaned_data['verification_notes']
+#             employee.save()
+#             messages.success(request, f"Verification completed for {employee.firstName} {employee.lastName}.")
+#             return redirect('search_verify_employees')
+#     else:
+#         form = FinalVerificationForm()
 
-    context = {
-        'employee': employee,
-        'form': form,
-    }
-    return render(request, 'hr_app/complete_verification.html', context)
+#     context = {
+#         'employee': employee,
+#         'form': form,
+#     }
+#     return render(request, 'hr_app/complete_verification.html', context)
+
 
 @login_required
 @user_passes_test(lambda u: is_authorized(u, ['DRUID_VIEWER', 'SUPER_ADMIN', 'DIRECTOR_GENERAL', 'HR_ADMIN', 'VERIFICATION_OFFICER']))
@@ -1917,7 +2233,6 @@ def view_report(request, report_id):
     }
     return render(request, 'hr_app/view_report.html', context)
 
-
 @login_required
 def add_report_filter(request, report_id):
     report = get_object_or_404(CustomReport, id=report_id)
@@ -1940,7 +2255,6 @@ def add_report_filter(request, report_id):
         form = ReportFilterForm(model_fields=model_fields)
     
     return render(request, 'hr_app/add_report_filter.html', {'form': form, 'report': report})
-
 
 
 @login_required
@@ -1976,9 +2290,6 @@ def export_report_csv(request, report_id):
     return response
 
 
-
-
-
 @login_required
 def saved_reports(request):
     reports = CustomReport.objects.filter(created_by=request.user)
@@ -2004,15 +2315,14 @@ def system_settings(request):
     return render(request, 'hr_app/system_settings.html', context)
 
 
-
 @login_required
 @user_passes_test(lambda u: is_authorized(u, ['DRUID_VIEWER','HR_DATA_SCREENING']))
 def file_number_discrepancies(request):
     staff_audit_duplicates = StaffAuditEmployee.objects.values('fileNumber').annotate(
-        count=Count('fileNumber')).filter(count__gt=1).order_by('fileNumber')
+        count=Count('fileNumber')).filter(Q(count__gt=1) | Q(fileNumber='')).order_by('fileNumber')
     
     employee_duplicates = Employee.objects.values('fileNumber').annotate(
-        count=Count('fileNumber')).filter(count__gt=1).order_by('fileNumber')
+        count=Count('fileNumber')).filter(Q(count__gt=1) | Q(fileNumber='')).order_by('fileNumber')
 
     staff_paginator = Paginator(staff_audit_duplicates, 12)
     employee_paginator = Paginator(employee_duplicates, 12)
@@ -2027,15 +2337,18 @@ def file_number_discrepancies(request):
     }
     return render(request, 'hr_app/file_number_discrepancies.html', context)
 
+# ... other views remain the same
 
-@login_required
-@user_passes_test(lambda u: is_authorized(u, ['DRUID_VIEWER','HR_DATA_SCREENING']))
+
 def file_number_detail(request, file_number):
+    if file_number == 'empty':
+        file_number = ''
+    
     staff_audit_employees = StaffAuditEmployee.objects.filter(fileNumber=file_number)
     employees = Employee.objects.filter(fileNumber=file_number)
 
     context = {
-        'file_number': file_number,
+        'file_number': file_number or 'Empty',
         'staff_audit_employees': staff_audit_employees,
         'employees': employees,
     }
@@ -2052,9 +2365,12 @@ def edit_file_number(request, model, employee_id):
     if request.method == 'POST':
         form = FileNumberUpdateForm(request.POST, instance=employee)
         if form.is_valid():
-            form.save()
+            employee = form.save()
             messages.success(request, f"File number for {employee.firstName} {employee.lastName} has been updated.")
-            return redirect('file_number_detail', file_number=employee.fileNumber)
+            
+            # Use the updated file number or 'empty' if it's blank
+            file_number = employee.fileNumber if employee.fileNumber else 'empty'
+            return redirect('file_number_detail', file_number=file_number)
     else:
         form = FileNumberUpdateForm(instance=employee)
 
@@ -2064,6 +2380,7 @@ def edit_file_number(request, model, employee_id):
         'model': model,
     }
     return render(request, 'hr_app/edit_file_number.html', context)
+
 
 
 @login_required
@@ -2118,9 +2435,8 @@ def resolve_ticket(request, ticket_id):
 
 # Helper functions
 
-
 def get_verification_progress():
-    total = Employee.objects.count()
+    total = StaffAuditEmployee.objects.count()
     verified = Employee.objects.filter(isVerified=True).count()
     return (verified / total) * 100 if total > 0 else 0
 
@@ -2305,66 +2621,161 @@ def start_verification(request, ippis_number):
     return render(request, 'hr_app/start_verification.html', context)
 
 
+
 @login_required
-@user_passes_test(lambda u: u.userprofile.role in ['DRUID_VIEWER','HR_ADMIN','IT_ADMIN','VERIFICATION_OFFICER', 'TEAM_LEAD'])
+@user_passes_test(lambda u: is_authorized(u, ['DRUID_VIEWER', 'SUPER_ADMIN', 'DIRECTOR_GENERAL', 'HR_ADMIN', 'VERIFICATION_OFFICER']))
 def complete_verification(request, ippis_number):
     employee_data = request.session.get('employee_data')
+    
     if not employee_data:
         messages.error(request, "No employee data found. Please start the verification process again.")
-        return redirect('start_verification', ippis_number=ippis_number)
+        return redirect('search_verify_employees')
 
-    # Convert serialized data back to appropriate types
-    date_fields = ['dateOfBirth', 'dateOfFirstAppointment', 'dateOfPresentAppointment', 'dateOfConfirmation']
-    for field in date_fields:
-        if field in employee_data and employee_data[field]:
-            employee_data[field] = datetime.fromisoformat(employee_data[field]).date()
+    employee, created = Employee.objects.get_or_create(ippisNumber=ippis_number)
 
-    # Convert foreign key fields back to model instances
-    fk_fields = ['stateOfOrigin', 'lgaOfOrigin', 'currentGradeLevel', 'department', 'division', 'presentAppointment',
-                 'stateOfPosting', 'station', 'bank', 'pfa']
-    for field in fk_fields:
-        if field in employee_data and employee_data[field]:
-            model_class = Employee._meta.get_field(field).related_model
-            employee_data[field] = model_class.objects.get(pk=employee_data[field])
+    if created or not employee.isVerified:
+        # Populate the employee object with data from the session
+        for key, value in employee_data.items():
+            if hasattr(employee, key):
+                field = employee._meta.get_field(key)
+                if field.is_relation:
+                    # Handle foreign key relationships
+                    if field.related_model == State:
+                        value = get_object_or_404(State, pk=value)
+                    elif field.related_model == LGA:
+                        value = get_object_or_404(LGA, pk=value)
+                    elif field.related_model == Department:
+                        value = get_object_or_404(Department, pk=value)
+                    elif field.related_model == Division:
+                        value = get_object_or_404(Division, pk=value)
+                    elif field.related_model == GradeLevel:
+                        value = get_object_or_404(GradeLevel, pk=value)
+                    elif field.related_model == Bank:
+                        value = get_object_or_404(Bank, pk=value)
+                    elif field.related_model == PFA:
+                        value = get_object_or_404(PFA, pk=value)
+                    elif field.related_model == OfficialAppointment:
+                        value = get_object_or_404(OfficialAppointment, pk=value)
+                setattr(employee, key, value)
+        employee.save()
 
     if request.method == 'POST':
-        form = CompleteVerificationForm(request.POST, request.FILES)
+        form = FinalVerificationForm(request.POST)
         if form.is_valid():
-            # Create Employee instance
-            employee = Employee(**employee_data)
-            
-            # Process the captured image
-            image_data = form.cleaned_data['captured_image']
-            if image_data:
-                format, imgstr = image_data.split(';base64,')
-                image = Image.open(BytesIO(base64.b64decode(imgstr)))
-                
-                # Resize and compress image
-                image.thumbnail((300, 300))
-                output = BytesIO()
-                image.save(output, format='JPEG', quality=85)
-                output.seek(0)
-                
-                # Save the image to the employee record
-                employee.passport.save(f'{ippis_number}_passport.jpg', ContentFile(output.getvalue()), save=False)
+            try:
+                with transaction.atomic():
+                    employee.isVerified = True
+                    employee.verifiedBy = request.user
+                    employee.verificationDate = timezone.now()
+                    employee.verificationNotes = form.cleaned_data.get('verification_notes', '')
 
-            employee.verificationNotes = form.cleaned_data['verification_notes']
-            employee.isVerified = True
-            employee.verifiedBy = request.user
-            employee.verificationDate = timezone.now()
-            employee.save()
+                    # Handle Change of Name Request
+                    if form.cleaned_data.get('change_of_name'):
+                        employee.hasNameChanged = True
+                        employee.nameChangeDate = timezone.now().date()
+                        employee.previousLastName = employee.lastName
+                        employee.previousFirstName = employee.firstName
+                        employee.previousMiddleName = employee.middleName
+                        employee.lastName = form.cleaned_data.get('new_last_name')
+                        employee.firstName = form.cleaned_data.get('new_first_name')
+                        employee.middleName = form.cleaned_data.get('new_middle_name')
 
-            # Clear the session data
-            del request.session['employee_data']
+                    # Handle Transfer Staff
+                    if form.cleaned_data.get('transfer_staff'):
+                        new_state = form.cleaned_data.get('transfer_to_state')
+                        if new_state:
+                            employee.isTransferred = True
+                            employee.transferDate = timezone.now().date()
+                            employee.previousStateOfPosting = employee.stateOfPosting
+                            employee.stateOfPosting = get_object_or_404(State, pk=new_state)
 
-            messages.success(request, f"Verification completed for employee {ippis_number}.")
-            return redirect('view_employee_data', ippis_number=ippis_number)
+                    # Handle captured image
+                    captured_image = request.POST.get('captured_image')
+                    if captured_image:
+                        format, imgstr = captured_image.split(';base64,')
+                        ext = format.split('/')[-1]
+                        img_data = base64.b64decode(imgstr)
+                        
+                        # Open the image with PIL
+                        img = Image.open(BytesIO(img_data))
+                        img.thumbnail((300, 300))  # Resize to max 300x300
+                        
+                        # Save processed image
+                        img_io = BytesIO()
+                        img.save(img_io, format='PNG')
+                        img_file = ContentFile(img_io.getvalue(), name=f'employee_{ippis_number}_photo.png')
+                        employee.passport = img_file
+
+                    # Update discrepancies
+                    update_discrepancies(employee)
+
+                    # Calculate retirement date
+                    retirement_date = calculate_retirement_date(employee)
+                    if retirement_date:
+                        employee.retirementDate = retirement_date
+
+                    employee.save()
+
+                # Clear the session data after successful verification
+                del request.session['employee_data']
+
+                messages.success(request, f"Verification completed for {employee.firstName} {employee.lastName}.")
+                return redirect('view_employee_data')
+            except Exception as e:
+                messages.error(request, f"An error occurred during verification: {str(e)}")
     else:
-        form = CompleteVerificationForm()
+        form = FinalVerificationForm()
 
-    return render(request, 'hr_app/complete_verification.html', {'form': form, 'ippis_number': ippis_number})
+    states = State.objects.all()
+    context = {
+        'employee': employee,
+        'form': form,
+        'states': states,
+    }
+    return render(request, 'hr_app/complete_verification.html', context)
 
 
+def update_discrepancies(employee):
+    # Update discrepancies based on IPPIS data
+    dob_discrepancy, _ = Discrepancy.objects.get_or_create(
+        employee=employee,
+        discrepancyType='DOB',
+        defaults={
+            'auditValue': str(employee.dateOfBirth),
+            'employeeValue': str(employee.dateOfBirth_ippis)
+        }
+    )
+    dob_discrepancy.auditValue = str(employee.dateOfBirth)
+    dob_discrepancy.employeeValue = str(employee.dateOfBirth_ippis)
+    dob_discrepancy.save()
+
+    dofa_discrepancy, _ = Discrepancy.objects.get_or_create(
+        employee=employee,
+        discrepancyType='DOF',
+        defaults={
+            'auditValue': str(employee.dateOfFirstAppointment),
+            'employeeValue': str(employee.dateOfFirstAppointment_ippis)
+        }
+    )
+    dofa_discrepancy.auditValue = str(employee.dateOfFirstAppointment)
+    dofa_discrepancy.employeeValue = str(employee.dateOfFirstAppointment_ippis)
+    dofa_discrepancy.save()
+
+def calculate_retirement_date(employee):
+    if not all([employee.dateOfFirstAppointment_ippis, employee.dateOfBirth_ippis, employee.currentGradeLevel]):
+        return None
+
+    today = timezone.now().date()
+    years_in_service = today.year - employee.dateOfFirstAppointment_ippis.year
+
+    if years_in_service >= 35:
+        return employee.dateOfFirstAppointment_ippis + timezone.timedelta(days=365*35)
+    else:
+        age = today.year - employee.dateOfBirth_ippis.year
+        if age >= 60:
+            return employee.dateOfBirth_ippis.replace(year=today.year)
+        else:
+            return employee.dateOfBirth_ippis.replace(year=today.year + 60 - age)
 
 @login_required
 @user_passes_test(lambda u: u.userprofile.role in ['DRUID_VIEWER','HR_ADMIN','IT_ADMIN','VERIFICATION_OFFICER', 'TEAM_LEAD'])
@@ -2439,8 +2850,13 @@ def get_divisions(request):
 from io import TextIOWrapper
 import chardet
 
+from django.contrib.auth.models import User
+from django.contrib.auth.hashers import make_password
+from .models import UserProfile, State, Department, Zone
+from django.db import transaction
+
 @login_required
-@user_passes_test(lambda u: u.is_superuser)
+@user_passes_test(lambda u: u.userprofile.role in ['DRUID_VIEWER', 'SUPER_ADMIN', 'HR_ADMIN'])
 def data_upload(request):
     model_choices = [
         ('Zone', 'Zones'),
@@ -2453,6 +2869,7 @@ def data_upload(request):
         ('Bank', 'Banks'),
         ('PFA', 'PFAs'),
         ('StaffAuditEmployee', 'Staff Audit Employees'),
+        ('User', 'Users'),
     ]
 
     if request.method == 'POST':
@@ -2466,18 +2883,16 @@ def data_upload(request):
             return JsonResponse({'error': 'File must be a CSV.'}, status=400)
 
         try:
-            # Detect file encoding
             raw_data = file.read()
             result = chardet.detect(raw_data)
             file_encoding = result['encoding']
-
-            # Decode the file content
             file_content = raw_data.decode(file_encoding)
             
-            # Get CSV preview
             csv_preview = get_csv_preview(file_content)
 
-            if model_name == 'StaffAuditEmployee':
+            if model_name == 'User':
+                result = process_user_upload(file_content, file_encoding)
+            elif model_name == 'StaffAuditEmployee':
                 result = process_staff_audit_employee(file_content, file_encoding)
             else:
                 result = process_general_upload(file_content, file_encoding, model_name)
@@ -2493,6 +2908,68 @@ def data_upload(request):
             return JsonResponse({'error': f'Error uploading data: {str(e)}'}, status=500)
     
     return render(request, 'hr_app/data_upload.html', {'model_choices': model_choices})
+
+@transaction.atomic
+def process_user_upload(file_content, file_encoding):
+    reader = csv.DictReader(file_content.splitlines())
+    created, updated, errors = 0, 0, 0
+
+    for row in reader:
+        try:
+            username = row['username']
+            email = row['email']
+            password = row['password']
+            first_name = row['first_name']
+            last_name = row['last_name']
+            role = row['role']
+            phone_number = row.get('phoneNumber', '')
+            ippis_number = row.get('ippisNumber', '')
+            department_code = row.get('department', '')
+            state_of_posting_code = row.get('stateOfPosting', '')
+            allowed_states = row.get('allowedStates', '').split(',')
+            allowed_departments = row.get('allowedDepartments', '').split(',')
+            allowed_zones = row.get('allowedZones', '').split(',')
+
+            user, user_created = User.objects.update_or_create(
+                username=username,
+                defaults={
+                    'email': email,
+                    'password': make_password(password),
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'is_active': True
+                }
+            )
+
+            department = Department.objects.get(code=department_code) if department_code else None
+            state_of_posting = State.objects.get(code=state_of_posting_code) if state_of_posting_code else None
+
+            user_profile, profile_created = UserProfile.objects.update_or_create(
+                user=user,
+                defaults={
+                    'role': role,
+                    'phoneNumber': phone_number,
+                    'ippisNumber': ippis_number,
+                    'department': department,
+                    'stateOfPosting': state_of_posting
+                }
+            )
+
+            user_profile.allowedStates.set(State.objects.filter(code__in=allowed_states))
+            user_profile.allowedDepartments.set(Department.objects.filter(code__in=allowed_departments))
+            user_profile.allowedZones.set(Zone.objects.filter(code__in=allowed_zones))
+
+            if user_created or profile_created:
+                created += 1
+            else:
+                updated += 1
+
+        except Exception as e:
+            errors += 1
+            print(f"Error processing row: {row}. Error: {str(e)}")
+
+    return {"created": created, "updated": updated, "errors": errors}
+
 
 def get_csv_preview(file_content, num_rows=5):
     csv_reader = csv.reader(file_content.splitlines())

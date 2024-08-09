@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Director General Dashboard - NPC HR Management System{% endblock %}
+{% block content %}
+<div class="bg-gray-100 min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold text-primary mb-8">Director General Dashboard</h1>
+        
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+            {% include "hr_app/components/stat_card.html" with title="Total Employees" value=total_employees %}
+            {% include "hr_app/components/stat_card.html" with title="Pending Verifications" value=pending_verifications %}
+            {% include "hr_app/components/stat_card.html" with title="Open Discrepancies" value=open_discrepancies %}
+            {% include "hr_app/components/stat_card.html" with title="Total Departments" value=total_departments %}
+        </div>
+
+        <!-- Quick Actions -->
+        <h2 class="text-2xl font-bold text-primary mb-4">Quick Actions</h2>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+            {% include "hr_app/components/action_button.html" with title="View Reports" url="saved_reports" %}
+            {% include "hr_app/components/action_button.html" with title="Department Overview" url="department_list" %}
+            {% include "hr_app/components/action_button.html" with title="Employee Statistics" url="custom_report_builder" %}
+        </div>
+
+        <!-- Verification Progress -->
+        {% include "hr_app/components/verification_progress.html" %}
+
+        <!-- Department Distribution -->
+        {% include "hr_app/components/department_distribution.html" %}
+    </div>
+</div>
+{% endblock %}

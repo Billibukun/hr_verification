@@ -802,16 +802,69 @@ class DiscrepancyResolutionForm(forms.ModelForm):
             'resolution': forms.Textarea(attrs={'rows': 3}),
         }
 
+from django import forms
+from .models import State
+
 class FinalVerificationForm(forms.Form):
     verification_notes = forms.CharField(
         widget=forms.Textarea(attrs={'rows': 4}),
         required=False,
-        help_text="Add any additional notes about the verification process."
+        label="Verification Notes"
     )
-    confirm_verification = forms.BooleanField(
-        required=True,
-        label="I confirm that all information has been verified and is correct."
+    
+    # Change of Name fields
+    change_of_name = forms.BooleanField(
+        required=False,
+        label="Request Change of Name"
     )
+    new_last_name = forms.CharField(
+        max_length=50,
+        required=False,
+        label="New Last Name"
+    )
+    new_first_name = forms.CharField(
+        max_length=50,
+        required=False,
+        label="New First Name"
+    )
+    new_middle_name = forms.CharField(
+        max_length=50,
+        required=False,
+        label="New Middle Name"
+    )
+    
+    # Transfer Staff fields
+    transfer_staff = forms.BooleanField(
+        required=False,
+        label="Transfer Staff"
+    )
+    transfer_to_state = forms.ModelChoiceField(
+        queryset=State.objects.all(),
+        required=False,
+        label="Transfer to State"
+    )
+    
+    # Image capture field (hidden field, will be populated via JavaScript)
+    captured_image = forms.CharField(
+        widget=forms.HiddenInput(),
+        required=False
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        change_of_name = cleaned_data.get('change_of_name')
+        transfer_staff = cleaned_data.get('transfer_staff')
+        
+        if change_of_name:
+            if not cleaned_data.get('new_last_name'):
+                self.add_error('new_last_name', 'New last name is required when requesting a name change.')
+            if not cleaned_data.get('new_first_name'):
+                self.add_error('new_first_name', 'New first name is required when requesting a name change.')
+        
+        if transfer_staff and not cleaned_data.get('transfer_to_state'):
+            self.add_error('transfer_to_state', 'Transfer to state is required when transferring staff.')
+        
+        return cleaned_data
     
     
 from django import forms
@@ -925,7 +978,13 @@ class EmployeeVerificationForm(forms.ModelForm):
             elif isinstance(field.widget, forms.DateInput):
                 field.widget.attrs['class'] = 'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5 datepicker-input'
                 field.input_formats = ['%Y-%m-%d']  # Ensure consistent date format
+            elif isinstance(field.widget, forms.Select):
+                field.widget.attrs['class'] = 'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5'
+            else:
+                field.widget.attrs['class'] = 'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5'
+            
             field.widget.attrs['data-field-name'] = field_name  # Add this for client-side validation
+
 
     def clean(self):
         cleaned_data = super().clean()
@@ -935,4 +994,6 @@ class CompleteVerificationForm(forms.Form):
     captured_image = forms.CharField(widget=forms.HiddenInput, required=False)
     verification_notes = forms.CharField(widget=forms.Textarea)
     attestation = forms.BooleanField(required=True, label="I attest that I have truthfully verified this employee's information.")
+    
+    
     

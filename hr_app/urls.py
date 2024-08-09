@@ -85,7 +85,7 @@ urlpatterns = [
     path('employee/<int:employee_id>/', views.employee_detail, name='employee_detail'),
     path('employee/<int:employee_id>/verification/', views.employee_verification_summary, name='employee_verification_summary'),
     path('employee/<int:employee_id>/update/<str:field_name>/', views.update_field, name='update_field'),
-    path('employee/<int:employee_id>/complete-verification/', views.complete_verification, name='complete_verification'),
+    # path('employee/<int:employee_id>/complete-verification/', views.complete_verification, name='complete_verification'),
 
     
     path('discrepancies/', views.manage_discrepancies, name='manage_discrepancies'),
@@ -102,14 +102,13 @@ urlpatterns = [
     
     path('settings/', views.system_settings, name='system_settings'),
     
-    
     path('employee/<int:employee_id>/', views.employee_detail, name='employee_detail'),
     path('employee/<int:employee_id>/verify/', views.employee_verification, name='employee_verification'),
     path('employee/<int:employee_id>/approve-section/', views.approve_section, name='approve_section'),
     path('discrepancy/<int:discrepancy_id>/resolve/', views.resolve_discrepancy, name='resolve_discrepancy'),
     path('employee/<int:employee_id>/verification-summary/', views.employee_verification_summary, name='employee_verification_summary'),
     path('employee/<int:employee_id>/update-field/<str:field_name>/', views.update_field, name='update_field'),
-    path('employee/<int:employee_id>/complete-verification/', views.complete_verification, name='complete_verification'),
+    # path('employee/<int:employee_id>/complete-verification/', views.complete_verification, name='complete_verification'),
     
     
     path('file-number-discrepancies/', views.file_number_discrepancies, name='file_number_discrepancies'),
@@ -129,7 +128,8 @@ urlpatterns = [
     path('search-staff/', views.search_staff, name='search_staff'),
     path('view-staff-audit/<str:ippis_number>/', views.view_staff_audit, name='view_staff_audit'),
     path('start-verification/<str:ippis_number>/', views.start_verification, name='start_verification'),
-    path('complete-verification/<str:ippis_number>/', views.complete_verification, name='complete_verification'),
+    path('complete_verification/<int:ippis_number>/', views.complete_verification, name='complete_verification'),
     path('dashboard/data-upload/', views.data_upload, name='data_upload'),
     path('employee/<str:ippis_number>/data/', views.view_employee_data, name='view_employee_data'),
+    path('performance-metrics/', views.performance_metrics, name='performance_metrics'),
 ]

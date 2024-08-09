@@ -1,0 +1,10 @@
+<div class="bg-white shadow rounded-lg p-6">
+    <ul class="divide-y divide-gray-200">
+        {% for dept in distribution %}
+        <li class="py-4 flex justify-between">
+            <span class="text-sm font-medium text-gray-900">{{ dept.department__name }}</span>
+            <span class="text-sm text-gray-500">{{ dept.count }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+</div>

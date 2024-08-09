@@ -402,8 +402,8 @@ class Employee(models.Model):
         max_length=1, choices=GENDER_CHOICES, blank=True, verbose_name="Gender")
     maritalStatus = models.CharField(
         max_length=1, choices=MARITAL_STATUS_CHOICES, blank=True, verbose_name="Marital Status")
-    phoneNumber = models.CharField(
-        max_length=15, blank=True, verbose_name="Phone Number")
+    phoneNumber =  models.CharField(max_length=11, validators=[RegexValidator(
+        r'^(080|081|090|091|070)\d{8}$')], blank=True, null=True, verbose_name="Phone Number")
     emailAddress = models.EmailField(
         unique=True, blank=True, null=True, verbose_name="Email Address")
     residentialAddress = models.CharField(max_length=150,
@@ -477,15 +477,30 @@ class Employee(models.Model):
     nok1_address = models.CharField(
         max_length=100, null=True, blank=True, verbose_name="Next of Kin 1 Address")
     nok1_phoneNumber = models.CharField(
-        max_length=11, null=True, blank=True, verbose_name="Next of Kin 1 Phone Number")
+        max_length=15, null=True, blank=True, verbose_name="Next of Kin 1 Phone Number")
     nok2_name = models.CharField(
         max_length=50, null=True, blank=True, verbose_name='Next of Kin 2 Name')
     nok2_relationship = models.CharField(
-        max_length=50, choices=NOK_RELATIONSHIP_CHOICES, null=True, blank=True, verbose_name='Next of Kin 2 Relationship')
+        max_length=50, choices=NOK_RELATIONSHIP_CHOICES, null=True, blank=True, 
+        verbose_name='Next of Kin 2 Relationship')
     nok2_address = models.CharField(
         max_length=100, null=True, blank=True, verbose_name='Next of Kin 2 Address')
     nok2_phoneNumber = models.CharField(
-        max_length=11, null=True, blank=True, verbose_name='Next of Kin 2 Phone Number')
+        max_length=15, null=True, blank=True, verbose_name='Next of Kin 2 Phone Number')
+
+
+    isTransferred = models.BooleanField(default=False)
+    transferDate = models.DateField(null=True, blank=True, verbose_name='Date of Transfer')
+    previousStateOfPosting = models.ForeignKey(
+        'State', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='previous_state_employees', verbose_name='State Transferred From')
+
+    # Fields for name change
+    hasNameChanged = models.BooleanField(default=False)
+    nameChangeDate = models.DateField(null=True, blank=True)
+    previousLastName = models.CharField(max_length=100, blank=True, verbose_name='Requsted Surname')
+    previousFirstName = models.CharField(max_length=100, blank=True, verbose_name='Requsted First Name')
+    previousMiddleName = models.CharField(max_length=100, blank=True, verbose_name='Requsted Middle Name')
 
     # Metadata
     createdAt = models.DateTimeField(
@@ -493,6 +508,19 @@ class Employee(models.Model):
     updatedAt = models.DateTimeField(auto_now=True, verbose_name="Updated At")
     updatedBy = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
                                   blank=True, related_name='employeeUpdates', verbose_name="Updated By")
+
+
+    # IPPIS Verifications
+    surname_ippis = models.CharField(
+        max_length=50, blank=True, null=True, verbose_name="IPPIS Surname")
+    firstName_ippis = models.CharField(
+        max_length=50, blank=True, null=True, verbose_name="IPPIS First Name")
+    middleName_ippis = models.CharField(
+        max_length=50, blank=True, null=True, verbose_name="IPPIS Middle Name")
+    dateOfBirth_ippis = models.DateField(
+        blank=True, null=True, verbose_name="IPPIS Date of Birth")
+    dateOfFirstAppointment_ippis = models.DateField(
+        blank=True, null=True, verbose_name='IPPIS Date of First Appointment')
 
     # Profile update flags
     isProfileUpdated = models.BooleanField(
@@ -506,24 +534,6 @@ class Employee(models.Model):
     isNextOfKinUpdated = models.BooleanField(default=False)
     isSpouseInfoUpdated = models.BooleanField(default=False)
     isPreviousEmploymentUpdated = models.BooleanField(default=False)
-
-    # Approval fields
-    isPassportApproved = models.BooleanField(default=False)
-    isPersonalInfoApproved = models.BooleanField(default=False)
-    isEmploymentInfoApproved = models.BooleanField(default=False)
-    isEducationInfoApproved = models.BooleanField(default=False)
-    isFinancialInfoApproved = models.BooleanField(default=False)
-    isNextOfKinInfoApproved = models.BooleanField(default=False)
-    isSpouseInfoApproved = models.BooleanField(default=False)
-    isPreviousEmploymentApproved = models.BooleanField(default=False)
-
-    # IPPIS Verifications
-    surname_ippis = models.CharField(max_length=50, blank=True, null=True, verbose_name="IPPIS Surname")
-    firstName_ippis = models.CharField(max_length=50, blank=True, null=True, verbose_name="IPPIS First Name")
-    middleName_ippis = models.CharField(max_length=50, blank=True, null=True, verbose_name="IPPIS Middle Name")
-    dateOfBirth_ippis = models.DateField(blank=True, null=True, verbose_name="IPPIS Date of Birth")
-    dateOfFirstAppointment_ippis = models.DateField(
-        blank=True, null=True, verbose_name='IPPIS Date of First Appointment')
 
     # controls
     ippisNumber_verified = models.BooleanField(default=False)

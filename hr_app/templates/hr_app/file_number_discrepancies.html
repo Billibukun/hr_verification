@@ -8,19 +8,25 @@
 
         <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
             <div class="px-4 py-5 sm:px-6">
-                <h2 class="text-xl font-semibold text-primary">Staff Audit Duplicates</h2>
+                <h2 class="text-xl font-semibold text-primary">Staff Audit Discrepancies</h2>
             </div>
             <div class="border-t border-gray-200">
                 <ul class="divide-y divide-gray-200">
-                    {% for duplicate in staff_audit_duplicates|slice:":12" %}
+                    {% for duplicate in staff_audit_duplicates %}
                         <li class="px-4 py-4 sm:px-6 hover:bg-gray-50">
-                            <a href="{% url 'file_number_detail' duplicate.fileNumber %}" class="flex justify-between items-center">
-                                <span class="text-primary font-medium">{{ duplicate.fileNumber }}</span>
+                            <a href="{% url 'file_number_detail' duplicate.fileNumber|default:'empty' %}" class="flex justify-between items-center">
+                                <span class="text-primary font-medium">
+                                    {% if duplicate.fileNumber %}
+                                        {{ duplicate.fileNumber }}
+                                    {% else %}
+                                        <span class="text-red-500">Empty File Number</span>
+                                    {% endif %}
+                                </span>
                                 <span class="text-gray-500">{{ duplicate.count }} records</span>
                             </a>
                         </li>
                     {% empty %}
-                        <li class="px-4 py-4 sm:px-6">No duplicates found in Staff Audit records.</li>
+                        <li class="px-4 py-4 sm:px-6">No discrepancies found in Staff Audit records.</li>
                     {% endfor %}
                 </ul>
             </div>
@@ -28,29 +34,57 @@
 
         <div class="bg-white shadow overflow-hidden sm:rounded-lg">
             <div class="px-4 py-5 sm:px-6">
-                <h2 class="text-xl font-semibold text-primary">Employee Duplicates</h2>
+                <h2 class="text-xl font-semibold text-primary">Employee Discrepancies</h2>
             </div>
             <div class="border-t border-gray-200">
                 <ul class="divide-y divide-gray-200">
-                    {% for duplicate in employee_duplicates|slice:":12" %}
+                    {% for duplicate in employee_duplicates %}
                         <li class="px-4 py-4 sm:px-6 hover:bg-gray-50">
-                            <a href="{% url 'file_number_detail' duplicate.fileNumber %}" class="flex justify-between items-center">
-                                <span class="text-primary font-medium">{{ duplicate.fileNumber }}</span>
+                            <a href="{% url 'file_number_detail' duplicate.fileNumber|default:'empty' %}" class="flex justify-between items-center">
+                                <span class="text-primary font-medium">
+                                    {% if duplicate.fileNumber %}
+                                        {{ duplicate.fileNumber }}
+                                    {% else %}
+                                        <span class="text-red-500">Empty File Number</span>
+                                    {% endif %}
+                                </span>
                                 <span class="text-gray-500">{{ duplicate.count }} records</span>
                             </a>
                         </li>
                     {% empty %}
-                        <li class="px-4 py-4 sm:px-6">No duplicates found in Employee records.</li>
+                        <li class="px-4 py-4 sm:px-6">No discrepancies found in Employee records.</li>
                     {% endfor %}
                 </ul>
             </div>
         </div>
 
-        {% if staff_audit_duplicates.count > 12 or employee_duplicates.count > 12 %}
+        {% if staff_audit_duplicates.has_other_pages or employee_duplicates.has_other_pages %}
             <div class="mt-8 flex justify-center">
-                <a href="{% url 'file_number_discrepancies' %}?page=2" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-green-700">
-                    View More
-                </a>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    {% if staff_audit_duplicates.has_previous %}
+                        <a href="?page={{ staff_audit_duplicates.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            Previous
+                        </a>
+                    {% endif %}
+                    
+                    {% for i in staff_audit_duplicates.paginator.page_range %}
+                        {% if staff_audit_duplicates.number == i %}
+                            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
+                                {{ i }}
+                            </span>
+                        {% else %}
+                            <a href="?page={{ i }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                {{ i }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if staff_audit_duplicates.has_next %}
+                        <a href="?page={{ staff_audit_duplicates.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            Next
+                        </a>
+                    {% endif %}
+                </nav>
             </div>
         {% endif %}
     </div>
